@@ -1,8 +1,7 @@
-import cloneDeep from 'lodash.clonedeep'
 import merge from 'lodash.merge'
 import { Observable, of } from 'rxjs'
 import { catchError, tap } from 'rxjs/operators'
-import { BaseDataService, instances } from './__base'
+import { BaseDataService, getCtrl } from './__base'
 import { OCtrl } from './__ctrl/object'
 import { handleNext } from './__util/handle-next'
 import { protectValue } from './__util/protect-value'
@@ -18,7 +17,7 @@ const defaults: dataServiceOptions = {
   upsert: true
 }
 
-const getCtrl = <T>(id: number) => <OCtrl<T>>instances[id]
+const getObjectCtrl = <T>(id: number) => getCtrl(id)
 
 export abstract class ObjectDataService<T> extends BaseDataService<T> {
 
@@ -28,7 +27,7 @@ export abstract class ObjectDataService<T> extends BaseDataService<T> {
 
   protected set create(executer: OCtrl<T>['create']) {
     const
-      ctrl = getCtrl<T>(this.__dataServiceInstanceId),
+      ctrl = getObjectCtrl<T>(this.__dataServiceInstanceId),
       { creating, creatingSuccess } = ctrl,
       dialCreating = <T>(value: boolean) => tap<T>(() => creating.next(value))
     if (executer instanceof Observable) ctrl.create = of(null).pipe(
@@ -49,7 +48,7 @@ export abstract class ObjectDataService<T> extends BaseDataService<T> {
 
   protected set edit(executer: OCtrl<T>['edit']) {
     const
-      ctrl = getCtrl<T>(this.__dataServiceInstanceId),
+      ctrl = getObjectCtrl<T>(this.__dataServiceInstanceId),
       { editing, editingSuccess } = ctrl,
       dialEditing = <T>(value: boolean) => tap<T>(() => editing.next(value))
     if (executer instanceof Observable) ctrl.edit = of(null).pipe(
@@ -70,7 +69,7 @@ export abstract class ObjectDataService<T> extends BaseDataService<T> {
 
   protected set delete(executer: OCtrl<T>['delete']) {
     const
-      ctrl = getCtrl<T>(this.__dataServiceInstanceId),
+      ctrl = getObjectCtrl<T>(this.__dataServiceInstanceId),
       { deleting, deletingSuccess } = ctrl,
       dialDeleting = <T>(value: boolean) => tap<T>(() => deleting.next(value))
     if (executer instanceof Observable) ctrl.delete = of(null).pipe(
@@ -90,20 +89,20 @@ export abstract class ObjectDataService<T> extends BaseDataService<T> {
   }
 
   protected get create() {
-    return getCtrl<T>(this.__dataServiceInstanceId).create
+    return getObjectCtrl<T>(this.__dataServiceInstanceId).create
   }
 
   protected get edit() {
-    return getCtrl<T>(this.__dataServiceInstanceId).edit
+    return getObjectCtrl<T>(this.__dataServiceInstanceId).edit
   }
 
   protected get delete() {
-    return getCtrl<T>(this.__dataServiceInstanceId).delete
+    return getObjectCtrl<T>(this.__dataServiceInstanceId).delete
   }
 
   protected patch(newValue: Partial<T>) {
     const
-      ctrl = getCtrl<T>(this.__dataServiceInstanceId),
+      ctrl = getObjectCtrl<T>(this.__dataServiceInstanceId),
       value = ctrl.getValue()
     if (ctrl.upsert || value) handleNext(ctrl.value, merge(ctrl.getValue(), newValue))
   }

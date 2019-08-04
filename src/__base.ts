@@ -1,6 +1,6 @@
 import random from 'lodash.random'
 import { Observable, of } from 'rxjs'
-import { catchError, map, tap } from 'rxjs/operators'
+import { catchError, tap } from 'rxjs/operators'
 import { Ctrl } from './__ctrl/base'
 import { handleNext } from './__util/handle-next'
 import { protectValue } from './__util/protect-value'
@@ -9,7 +9,7 @@ import { waitUntilFalse } from './__util/wait-until-false'
 
 export const instances: { [key: number]: Ctrl<any> } = {}
 
-const getCtrl = <T>(id: number) => <Ctrl<T>>instances[id]
+export  const getCtrl = <T>(id: number) => <Ctrl<T>>instances[id]
 
 export abstract class BaseDataService<T> {
 

@@ -2,7 +2,7 @@ import merge from 'lodash.merge'
 import reject from 'lodash.reject'
 import { Observable, of } from 'rxjs'
 import { catchError, tap } from 'rxjs/operators'
-import { BaseDataService, instances } from './__base'
+import { BaseDataService, getCtrl } from './__base'
 import { ACtrl } from './__ctrl/array'
 import { handleNext } from './__util/handle-next'
 import { protectValue } from './__util/protect-value'
@@ -20,7 +20,7 @@ const defaults: arrayDataServiceOptions<{ _id }> = {
   upsert: true
 }
 
-const getCtrl = <T>(id: number) => <ACtrl<T>>instances[id]
+const getArrayCtrl = <T>(id: number) => <ACtrl<T>>getCtrl(id)
 
 export abstract class ArrayDataService<T> extends BaseDataService<Array<T>> {
 
@@ -30,7 +30,7 @@ export abstract class ArrayDataService<T> extends BaseDataService<Array<T>> {
 
   protected set create(executer: ACtrl<T>['create']) {
     const
-      ctrl = getCtrl<T>(this.__dataServiceInstanceId),
+      ctrl = getArrayCtrl<T>(this.__dataServiceInstanceId),
       { creating, creatingSuccess } = ctrl,
       dialCreating = <T>(value: boolean) => tap<T>(() => creating.next(value))
     if (executer instanceof Observable) ctrl.create = of(null).pipe(
@@ -51,7 +51,7 @@ export abstract class ArrayDataService<T> extends BaseDataService<Array<T>> {
 
   protected set edit(executer: ACtrl<T>['edit']) {
     const
-      ctrl = getCtrl<T>(this.__dataServiceInstanceId),
+      ctrl = getArrayCtrl<T>(this.__dataServiceInstanceId),
       { editing, editingSuccess } = ctrl,
       dialEditing = <T>(value: boolean) => tap<T>(() => editing.next(value))
     if (executer instanceof Observable) ctrl.edit = of(null).pipe(
@@ -72,7 +72,7 @@ export abstract class ArrayDataService<T> extends BaseDataService<Array<T>> {
 
   protected set delete(executer: ACtrl<T>['delete']) {
     const
-      ctrl = getCtrl<T>(this.__dataServiceInstanceId),
+      ctrl = getArrayCtrl<T>(this.__dataServiceInstanceId),
       { deleting, deletingSuccess } = ctrl,
       dialDeleting = <T>(value: boolean) => tap<T>(() => deleting.next(value))
     if (executer instanceof Observable) ctrl.delete = of(null).pipe(
@@ -92,25 +92,25 @@ export abstract class ArrayDataService<T> extends BaseDataService<Array<T>> {
   }
 
   protected get create() {
-    return getCtrl<T>(this.__dataServiceInstanceId).create
+    return getArrayCtrl<T>(this.__dataServiceInstanceId).create
   }
 
   protected get edit() {
-    return getCtrl<T>(this.__dataServiceInstanceId).edit
+    return getArrayCtrl<T>(this.__dataServiceInstanceId).edit
   }
 
   protected get delete() {
-    return getCtrl<T>(this.__dataServiceInstanceId).delete
+    return getArrayCtrl<T>(this.__dataServiceInstanceId).delete
   }
 
   protected add(item: T) {
-    const ctrl = getCtrl<T>(this.__dataServiceInstanceId)
+    const ctrl = getArrayCtrl<T>(this.__dataServiceInstanceId)
     handleNext(ctrl.value, (ctrl.getValue() || []).concat(item))
   }
 
-  protected remove({ loadNext = getCtrl<T>(this.__dataServiceInstanceId).removeOptions.getValue().loadNext, conditions } = getCtrl<T>(this.__dataServiceInstanceId).removeOptions.getValue()) {
+  protected remove({ loadNext = getArrayCtrl<T>(this.__dataServiceInstanceId).removeOptions.getValue().loadNext, conditions } = getArrayCtrl<T>(this.__dataServiceInstanceId).removeOptions.getValue()) {
     const
-      ctrl = getCtrl<T>(this.__dataServiceInstanceId),
+      ctrl = getArrayCtrl<T>(this.__dataServiceInstanceId),
       { removeOptions, value } = ctrl,
       items = ctrl.getValue()
     handleNext(removeOptions, { ...removeOptions.getValue(), loadNext })
@@ -119,7 +119,7 @@ export abstract class ArrayDataService<T> extends BaseDataService<Array<T>> {
 
   protected patch(newValue: Partial<T>) {
     const
-      ctrl = getCtrl<T>(this.__dataServiceInstanceId),
+      ctrl = getArrayCtrl<T>(this.__dataServiceInstanceId),
       { value, identifierProp, upsert } = ctrl,
       items = ctrl.getValue(),
       index = items.findIndex(({ [identifierProp]: id }) => id === newValue[identifierProp])
