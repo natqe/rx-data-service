@@ -21,6 +21,10 @@ export abstract class BaseDataService<T> {
   protected abstract set delete(executer: Observable<any>)
   protected abstract patch(item: any): void
 
+  constructor(ctrl: Ctrl<T>) {
+    instances[this.__dataServiceInstanceId] = ctrl
+  }
+
   protected readonly __dataServiceInstanceId = random(Number.MAX_SAFE_INTEGER)
 
   readonly value = instances[this.__dataServiceInstanceId].value.pipe(
@@ -101,7 +105,7 @@ export abstract class BaseDataService<T> {
   protected clear({ loadNext = getCtrl<T>(this.__dataServiceInstanceId).removeOptions.getValue().loadNext } = getCtrl<T>(this.__dataServiceInstanceId).removeOptions.getValue()) {
     const
       ctrl = getCtrl<T>(this.__dataServiceInstanceId),
-    { removeOptions, value } = ctrl
+      { removeOptions, value } = ctrl
     handleNext(removeOptions, { ...removeOptions.getValue(), loadNext })
     handleNext(value, null)
     ctrl.clearWasActive = true

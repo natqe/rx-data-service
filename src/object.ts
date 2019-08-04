@@ -23,8 +23,7 @@ const getCtrl = <T>(id: number) => <OCtrl<T>>instances[id]
 export abstract class ObjectDataService<T> extends BaseDataService<T> {
 
   constructor({ autoLoad = defaults.autoLoad, upsert = defaults.upsert } = defaults) {
-    super()
-    instances[this.__dataServiceInstanceId] = new OCtrl({ autoLoad, upsert })
+    super(new OCtrl({ autoLoad, upsert }))
   }
 
   protected set create(executer: OCtrl<T>['create']) {

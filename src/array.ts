@@ -25,8 +25,7 @@ const getCtrl = <T>(id: number) => <ACtrl<T>>instances[id]
 export abstract class ArrayDataService<T> extends BaseDataService<Array<T>> {
 
   constructor({ autoLoad = defaults.autoLoad, identifierProp = defaults.identifierProp as keyof T, upsert = defaults.upsert } = defaults as any as arrayDataServiceOptions<T>) {
-    super()
-    instances[this.__dataServiceInstanceId] = new ACtrl({ autoLoad, identifierProp, upsert })
+    super(new ACtrl({ autoLoad, identifierProp, upsert }))
   }
 
   protected set create(executer: ACtrl<T>['create']) {
