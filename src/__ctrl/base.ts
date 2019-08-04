@@ -13,7 +13,7 @@ const defaults: dataServiceCtrlOptions = {
   upsert: true
 }
 
-export abstract class DataServiceCtrl<T> {
+export abstract class Ctrl<T> {
 
   load: Observable<T>
   clearWasActive: boolean

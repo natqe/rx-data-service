@@ -1,15 +1,15 @@
 import random from 'lodash.random'
 import { Observable, of } from 'rxjs'
 import { catchError, map, tap } from 'rxjs/operators'
-import { DataServiceCtrl } from './__ctrl/base'
+import { Ctrl } from './__ctrl/base'
 import { handleNext } from './__util/handle-next'
 import { protectValue } from './__util/protect-value'
 import { switchOnce } from './__util/switch-once'
 import { waitUntilFalse } from './__util/wait-until-false'
 
-export const instances: { [key: number]: DataServiceCtrl<any> } = {}
+export const instances: { [key: number]: Ctrl<any> } = {}
 
-const getCtrl = <T>(id: number) => <DataServiceCtrl<T>>instances[id]
+const getCtrl = <T>(id: number) => <Ctrl<T>>instances[id]
 
 export abstract class BaseDataService<T> {
 
@@ -69,7 +69,7 @@ export abstract class BaseDataService<T> {
     getCtrl<T>(this.__dataServiceInstanceId).waitAndDialOperatingSuccess(getCtrl<T>(this.__dataServiceInstanceId).deleting)
   )
 
-  protected set load(executer: DataServiceCtrl<T>['load']) {
+  protected set load(executer: Ctrl<T>['load']) {
     const
       ctrl = getCtrl<T>(this.__dataServiceInstanceId),
       { loading, loadingSuccess } = ctrl,

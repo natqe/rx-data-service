@@ -1,5 +1,5 @@
 import { BehaviorSubject, Observable } from 'rxjs'
-import { DataServiceCtrl } from './base'
+import { Ctrl } from './base'
 
 type arrayDataServiceCtrlOptions<T> = {
   autoLoad?: boolean
@@ -13,7 +13,7 @@ const defaults: arrayDataServiceCtrlOptions<{ _id }> = {
   upsert: true
 }
 
-export class ArrayDataServiceCtrl<T> extends DataServiceCtrl<Array<T>>{
+export class ACtrl<T> extends Ctrl<Array<T>>{
 
   create: Observable<T>
   edit: Observable<Partial<T>>

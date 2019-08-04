@@ -1,7 +1,7 @@
 import { BehaviorSubject, Observable } from 'rxjs'
-import { DataServiceCtrl } from './base'
+import { Ctrl } from './base'
 
-export class ObjectDataServiceCtrl<T> extends DataServiceCtrl<T>{
+export class OCtrl<T> extends Ctrl<T>{
   create: Observable<T>
   edit: Observable<Partial<T>>
   delete: Observable<void>

@@ -3,7 +3,7 @@ import merge from 'lodash.merge'
 import { Observable, of } from 'rxjs'
 import { catchError, tap } from 'rxjs/operators'
 import { BaseDataService, instances } from './__base'
-import { ObjectDataServiceCtrl } from './__ctrl/object'
+import { OCtrl } from './__ctrl/object'
 import { handleNext } from './__util/handle-next'
 import { protectValue } from './__util/protect-value'
 import { switchOnce } from './__util/switch-once'
@@ -18,16 +18,16 @@ const defaults: dataServiceOptions = {
   upsert: true
 }
 
-const getCtrl = <T>(id: number) => <ObjectDataServiceCtrl<T>>instances[id]
+const getCtrl = <T>(id: number) => <OCtrl<T>>instances[id]
 
 export abstract class ObjectDataService<T> extends BaseDataService<T> {
 
   constructor({ autoLoad = defaults.autoLoad, upsert = defaults.upsert } = defaults) {
     super()
-    instances[this.__dataServiceInstanceId] = new ObjectDataServiceCtrl({ autoLoad, upsert })
+    instances[this.__dataServiceInstanceId] = new OCtrl({ autoLoad, upsert })
   }
 
-  protected set create(executer: ObjectDataServiceCtrl<T>['create']) {
+  protected set create(executer: OCtrl<T>['create']) {
     const
       ctrl = getCtrl<T>(this.__dataServiceInstanceId),
       { creating, creatingSuccess } = ctrl,
@@ -48,7 +48,7 @@ export abstract class ObjectDataService<T> extends BaseDataService<T> {
     )
   }
 
-  protected set edit(executer: ObjectDataServiceCtrl<T>['edit']) {
+  protected set edit(executer: OCtrl<T>['edit']) {
     const
       ctrl = getCtrl<T>(this.__dataServiceInstanceId),
       { editing, editingSuccess } = ctrl,
@@ -69,7 +69,7 @@ export abstract class ObjectDataService<T> extends BaseDataService<T> {
     )
   }
 
-  protected set delete(executer: ObjectDataServiceCtrl<T>['delete']) {
+  protected set delete(executer: OCtrl<T>['delete']) {
     const
       ctrl = getCtrl<T>(this.__dataServiceInstanceId),
       { deleting, deletingSuccess } = ctrl,

@@ -3,7 +3,7 @@ import reject from 'lodash.reject'
 import { Observable, of } from 'rxjs'
 import { catchError, tap } from 'rxjs/operators'
 import { BaseDataService, instances } from './__base'
-import { ArrayDataServiceCtrl } from './__ctrl/array'
+import { ACtrl } from './__ctrl/array'
 import { handleNext } from './__util/handle-next'
 import { protectValue } from './__util/protect-value'
 import { switchOnce } from './__util/switch-once'
@@ -20,16 +20,16 @@ const defaults: arrayDataServiceOptions<{ _id }> = {
   upsert: true
 }
 
-const getCtrl = <T>(id: number) => <ArrayDataServiceCtrl<T>>instances[id]
+const getCtrl = <T>(id: number) => <ACtrl<T>>instances[id]
 
-export abstract class ArrayDataService<T> extends BaseDataService<T> {
+export abstract class ArrayDataService<T> extends BaseDataService<Array<T>> {
 
   constructor({ autoLoad = defaults.autoLoad, identifierProp = defaults.identifierProp as keyof T, upsert = defaults.upsert } = defaults as any as arrayDataServiceOptions<T>) {
     super()
-    instances[this.__dataServiceInstanceId] = new ArrayDataServiceCtrl({ autoLoad, identifierProp, upsert })
+    instances[this.__dataServiceInstanceId] = new ACtrl({ autoLoad, identifierProp, upsert })
   }
 
-  protected set create(executer: ArrayDataServiceCtrl<T>['create']) {
+  protected set create(executer: ACtrl<T>['create']) {
     const
       ctrl = getCtrl<T>(this.__dataServiceInstanceId),
       { creating, creatingSuccess } = ctrl,
@@ -50,7 +50,7 @@ export abstract class ArrayDataService<T> extends BaseDataService<T> {
     )
   }
 
-  protected set edit(executer: ArrayDataServiceCtrl<T>['edit']) {
+  protected set edit(executer: ACtrl<T>['edit']) {
     const
       ctrl = getCtrl<T>(this.__dataServiceInstanceId),
       { editing, editingSuccess } = ctrl,
@@ -71,7 +71,7 @@ export abstract class ArrayDataService<T> extends BaseDataService<T> {
     )
   }
 
-  protected set delete(executer: ArrayDataServiceCtrl<T>['delete']) {
+  protected set delete(executer: ACtrl<T>['delete']) {
     const
       ctrl = getCtrl<T>(this.__dataServiceInstanceId),
       { deleting, deletingSuccess } = ctrl,
