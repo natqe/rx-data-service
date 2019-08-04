@@ -1,4 +1,3 @@
-import random from 'lodash.random'
 import { Observable, of } from 'rxjs'
 import { catchError, tap } from 'rxjs/operators'
 import { Ctrl } from './__ctrl/base'
@@ -6,10 +5,6 @@ import { handleNext } from './__util/handle-next'
 import { protectValue } from './__util/protect-value'
 import { switchOnce } from './__util/switch-once'
 import { waitUntilFalse } from './__util/wait-until-false'
-
-export const instances: { [key: number]: Ctrl<any> } = {}
-
-export  const getCtrl = <T>(id: number) => <Ctrl<T>>instances[id]
 
 export abstract class BaseDataService<T> {
 
@@ -21,61 +16,57 @@ export abstract class BaseDataService<T> {
   protected abstract set delete(executer: Observable<any>)
   protected abstract patch(item: any): void
 
-  constructor(ctrl: Ctrl<T>) {
-    instances[this.__dataServiceInstanceId] = ctrl
-  }
+  constructor(protected readonly __dataServiceInstanceCtrl: Ctrl<T>) { }
 
-  protected readonly __dataServiceInstanceId = random(Number.MAX_SAFE_INTEGER)
-
-  readonly value = instances[this.__dataServiceInstanceId].value.pipe(
+  readonly value = this.__dataServiceInstanceCtrl.value.pipe(
     tap(value => {
-      const { load, removeOptions: clearValueOptions, clearWasActive, autoLoad } = getCtrl<T>(this.__dataServiceInstanceId)
+      const { load, removeOptions: clearValueOptions, clearWasActive, autoLoad } = this.__dataServiceInstanceCtrl
       if (value === null && load && autoLoad) if (!clearWasActive || clearValueOptions.getValue().loadNext) load.subscribe()
     }),
     protectValue()
   )
 
-  readonly operating = getCtrl<T>(this.__dataServiceInstanceId).operating.asObservable()
+  readonly operating = this.__dataServiceInstanceCtrl.operating.asObservable()
 
-  readonly loading = getCtrl<T>(this.__dataServiceInstanceId).loading.pipe(
-    getCtrl<T>(this.__dataServiceInstanceId).dialOperating()
+  readonly loading = this.__dataServiceInstanceCtrl.loading.pipe(
+    this.__dataServiceInstanceCtrl.dialOperating()
   )
 
-  readonly creating = getCtrl<T>(this.__dataServiceInstanceId).creating.pipe(
-    getCtrl<T>(this.__dataServiceInstanceId).dialOperating()
+  readonly creating = this.__dataServiceInstanceCtrl.creating.pipe(
+    this.__dataServiceInstanceCtrl.dialOperating()
   )
 
-  readonly editing = getCtrl<T>(this.__dataServiceInstanceId).editing.pipe(
-    getCtrl<T>(this.__dataServiceInstanceId).dialOperating()
+  readonly editing = this.__dataServiceInstanceCtrl.editing.pipe(
+    this.__dataServiceInstanceCtrl.dialOperating()
   )
 
-  readonly deleting = getCtrl<T>(this.__dataServiceInstanceId).deleting.pipe(
-    getCtrl<T>(this.__dataServiceInstanceId).dialOperating()
+  readonly deleting = this.__dataServiceInstanceCtrl.deleting.pipe(
+    this.__dataServiceInstanceCtrl.dialOperating()
   )
 
-  readonly operatingSuccess = getCtrl<T>(this.__dataServiceInstanceId).operatingSuccess.pipe(
-    waitUntilFalse(getCtrl<T>(this.__dataServiceInstanceId).operating)
+  readonly operatingSuccess = this.__dataServiceInstanceCtrl.operatingSuccess.pipe(
+    waitUntilFalse(this.__dataServiceInstanceCtrl.operating)
   )
 
-  readonly loadingSuccess = getCtrl<T>(this.__dataServiceInstanceId).loadingSuccess.pipe(
-    getCtrl<T>(this.__dataServiceInstanceId).waitAndDialOperatingSuccess(getCtrl<T>(this.__dataServiceInstanceId).loading)
+  readonly loadingSuccess = this.__dataServiceInstanceCtrl.loadingSuccess.pipe(
+    this.__dataServiceInstanceCtrl.waitAndDialOperatingSuccess(this.__dataServiceInstanceCtrl.loading)
   )
 
-  readonly creatingSuccess = getCtrl<T>(this.__dataServiceInstanceId).creatingSuccess.pipe(
-    getCtrl<T>(this.__dataServiceInstanceId).waitAndDialOperatingSuccess(getCtrl<T>(this.__dataServiceInstanceId).creating)
+  readonly creatingSuccess = this.__dataServiceInstanceCtrl.creatingSuccess.pipe(
+    this.__dataServiceInstanceCtrl.waitAndDialOperatingSuccess(this.__dataServiceInstanceCtrl.creating)
   )
 
-  readonly editingSuccess = getCtrl<T>(this.__dataServiceInstanceId).editingSuccess.pipe(
-    getCtrl<T>(this.__dataServiceInstanceId).waitAndDialOperatingSuccess(getCtrl<T>(this.__dataServiceInstanceId).editing)
+  readonly editingSuccess = this.__dataServiceInstanceCtrl.editingSuccess.pipe(
+    this.__dataServiceInstanceCtrl.waitAndDialOperatingSuccess(this.__dataServiceInstanceCtrl.editing)
   )
 
-  readonly deletingSuccess = getCtrl<T>(this.__dataServiceInstanceId).deletingSuccess.pipe(
-    getCtrl<T>(this.__dataServiceInstanceId).waitAndDialOperatingSuccess(getCtrl<T>(this.__dataServiceInstanceId).deleting)
+  readonly deletingSuccess = this.__dataServiceInstanceCtrl.deletingSuccess.pipe(
+    this.__dataServiceInstanceCtrl.waitAndDialOperatingSuccess(this.__dataServiceInstanceCtrl.deleting)
   )
 
   protected set load(executer: Ctrl<T>['load']) {
     const
-      ctrl = getCtrl<T>(this.__dataServiceInstanceId),
+      ctrl = this.__dataServiceInstanceCtrl,
       { loading, loadingSuccess } = ctrl,
       dialLoading = <T>(value: boolean) => tap<T>(() => loading.next(value))
     if (executer instanceof Observable) ctrl.load = of(null).pipe(
@@ -95,16 +86,16 @@ export abstract class BaseDataService<T> {
   }
 
   protected get load() {
-    return getCtrl<T>(this.__dataServiceInstanceId).load
+    return this.__dataServiceInstanceCtrl.load
   }
 
   protected set(value: T) {
-    handleNext(getCtrl<T>(this.__dataServiceInstanceId).value, value)
+    handleNext(this.__dataServiceInstanceCtrl.value, value)
   }
 
-  protected clear({ loadNext = getCtrl<T>(this.__dataServiceInstanceId).removeOptions.getValue().loadNext } = getCtrl<T>(this.__dataServiceInstanceId).removeOptions.getValue()) {
+  protected clear({ loadNext = this.__dataServiceInstanceCtrl.removeOptions.getValue().loadNext } = this.__dataServiceInstanceCtrl.removeOptions.getValue()) {
     const
-      ctrl = getCtrl<T>(this.__dataServiceInstanceId),
+      ctrl = this.__dataServiceInstanceCtrl,
       { removeOptions, value } = ctrl
     handleNext(removeOptions, { ...removeOptions.getValue(), loadNext })
     handleNext(value, null)
@@ -138,7 +129,7 @@ export abstract class BaseDataService<T> {
 
   protected wrapAsync<P>(executer: Observable<P>): Observable<P> {
     const
-      { operating, operatingSuccess } = getCtrl<T>(this.__dataServiceInstanceId),
+      { operating, operatingSuccess } = this.__dataServiceInstanceCtrl,
       dialOperating = <T>(value: boolean) => tap<T>(() => operating.next(value))
     if (executer instanceof Observable) return of(null).pipe(
       dialOperating(true),
