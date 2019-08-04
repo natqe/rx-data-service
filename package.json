@@ -1,0 +1,28 @@
+{
+  "name": "rx-data-service",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "rm -rf dist && tsc && cp readme.md dist/readme.md && cp LICENSE dist/LICENSE  && cp -R src dist/src && npm version patch && cp package.json dist/package.json && cd dist/ && npm publish"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "lodash.clonedeep": "4.5.0",
+    "lodash.isequal": "4.5.0",
+    "lodash.merge": "4.6.2",
+    "lodash.random": "3.2.0",
+    "lodash.reject": "^4.6.0",
+    "rxjs": "6.5.2"
+  },
+  "devDependencies": {
+    "@types/lodash.clonedeep": "4.5.6",
+    "@types/lodash.isequal": "4.5.5",
+    "@types/lodash.merge": "4.6.6",
+    "@types/lodash.random": "3.2.6",
+    "@types/lodash.reject": "^4.6.6",
+    "typescript": "3.5.3"
+  }
+}
