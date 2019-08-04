@@ -9,9 +9,9 @@ import { protectValue } from './__util/protect-value'
 import { switchOnce } from './__util/switch-once'
 
 export type arrayDataServiceOptions<T> = {
-  autoLoad: boolean
-  identifierProp: keyof T
-  upsert: boolean
+  autoLoad?: boolean
+  identifierProp?: keyof T
+  upsert?: boolean
 }
 
 const defaults: arrayDataServiceOptions<{ _id }> = {

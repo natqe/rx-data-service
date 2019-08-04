@@ -9,8 +9,8 @@ import { protectValue } from './__util/protect-value'
 import { switchOnce } from './__util/switch-once'
 
 export type dataServiceOptions = {
-  autoLoad: boolean
-  upsert: boolean
+  autoLoad?: boolean
+  upsert?: boolean
 }
 
 const defaults: dataServiceOptions = {

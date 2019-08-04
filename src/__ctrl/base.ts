@@ -4,8 +4,8 @@ import { tap } from 'rxjs/operators'
 import { waitUntilFalse } from '../__util/wait-until-false'
 
 type dataServiceCtrlOptions = {
-  autoLoad: boolean
-  upsert: boolean
+  autoLoad?: boolean
+  upsert?: boolean
 }
 
 const defaults: dataServiceCtrlOptions = {

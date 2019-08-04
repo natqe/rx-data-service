@@ -1,5 +1,5 @@
-import { ArrayDataService } from './array'
-import { DataService, ObjectDataService } from './object'
+import { ArrayDataService, arrayDataServiceOptions } from './array'
+import { DataService, dataServiceOptions, ObjectDataService } from './object'
 
 const rxDataService = {
   DataService,
@@ -12,6 +12,8 @@ export {
   DataService,
   ObjectDataService,
   ArrayDataService,
+  dataServiceOptions,
+  arrayDataServiceOptions
 }
 
 export default rxDataService

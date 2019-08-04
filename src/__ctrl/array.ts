@@ -2,9 +2,9 @@ import { BehaviorSubject, Observable } from 'rxjs'
 import { DataServiceCtrl } from './base'
 
 type arrayDataServiceCtrlOptions<T> = {
-  autoLoad: boolean
-  identifierProp: keyof T
-  upsert: boolean
+  autoLoad?: boolean
+  identifierProp?: keyof T
+  upsert?: boolean
 }
 
 const defaults: arrayDataServiceCtrlOptions<{ _id }> = {
