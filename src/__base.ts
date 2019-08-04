@@ -1,8 +1,8 @@
+import cloneDeep from 'lodash.clonedeep'
 import { Observable, of } from 'rxjs'
-import { catchError, tap } from 'rxjs/operators'
+import { catchError, map, tap } from 'rxjs/operators'
 import { Ctrl } from './__ctrl/base'
 import { handleNext } from './__util/handle-next'
-import { protectValue } from './__util/protect-value'
 import { switchOnce } from './__util/switch-once'
 import { waitUntilFalse } from './__util/wait-until-false'
 
@@ -23,7 +23,7 @@ export abstract class BaseDataService<T> {
       const { load, removeOptions: clearValueOptions, clearWasActive, autoLoad } = this.__dataServiceInstanceCtrl
       if (value === null && load && autoLoad) if (!clearWasActive || clearValueOptions.getValue().loadNext) load.subscribe()
     }),
-    protectValue()
+    this.protectValue()
   )
 
   readonly operating = this.__dataServiceInstanceCtrl.operating.asObservable()
@@ -81,7 +81,7 @@ export abstract class BaseDataService<T> {
         return this.handleLoadingError(response)
       }),
       dialLoading(false),
-      protectValue()
+      this.protectValue()
     )
   }
 
@@ -140,6 +140,12 @@ export abstract class BaseDataService<T> {
         return this.handleOperatingError(response)
       }),
       dialOperating(false)
+    )
+  }
+
+  protected protectValue() {
+    return <T>(src: Observable<T>) => src.pipe(
+      map(cloneDeep)
     )
   }
 

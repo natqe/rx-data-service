@@ -4,7 +4,6 @@ import { catchError, tap } from 'rxjs/operators'
 import { BaseDataService } from './__base'
 import { OCtrl } from './__ctrl/object'
 import { handleNext } from './__util/handle-next'
-import { protectValue } from './__util/protect-value'
 import { switchOnce } from './__util/switch-once'
 
 export type dataServiceOptions = {
@@ -42,7 +41,7 @@ export abstract class ObjectDataService<T> extends BaseDataService<T> {
         return this.handleCreatingError(response)
       }),
       dialCreating(false),
-      protectValue()
+      this.protectValue()
     )
   }
 
@@ -63,7 +62,7 @@ export abstract class ObjectDataService<T> extends BaseDataService<T> {
         return this.handleEditingError(response)
       }),
       dialEditing(false),
-      protectValue()
+      this.protectValue()
     )
   }
 
@@ -84,7 +83,7 @@ export abstract class ObjectDataService<T> extends BaseDataService<T> {
         return this.handleDeletingError(response)
       }),
       dialDeleting(false),
-      protectValue()
+      this.protectValue()
     )
   }
 
