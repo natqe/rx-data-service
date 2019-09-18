@@ -6,6 +6,9 @@ import { BaseDataService } from './__base'
 import { ACtrl } from './__ctrl/array'
 import { handleNext } from './__util/handle-next'
 import { switchOnce } from './__util/switch-once'
+import cloneDeep from 'lodash.clonedeep'
+import remove from 'lodash.remove'
+import some from 'lodash.some'
 
 export type arrayDataServiceOptions<T> = {
   autoLoad?: boolean
@@ -102,9 +105,14 @@ export abstract class ArrayDataService<T> extends BaseDataService<Array<T>> {
     return this.__dataServiceInstanceCtrl.delete
   }
 
-  protected add(item: T) {
-    const ctrl = this.__dataServiceInstanceCtrl
-    handleNext(ctrl.value, (ctrl.getValue() || []).concat(item))
+  protected add(item: T | Array<T>) {
+    item = cloneDeep(item)
+    const
+      ctrl = this.__dataServiceInstanceCtrl,
+      { value, identifierProp } = ctrl,
+      exist = (item: T) => some(value.value, ({ [identifierProp]: id }) => id === item[identifierProp])
+    if(Array.isArray(item)) remove(item, exist)
+    if (Array.isArray(item) || !exist(item)) handleNext(ctrl.value, (ctrl.getValue() || []).concat(item))
   }
 
   protected remove({ loadNext = this.__dataServiceInstanceCtrl.removeOptions.getValue().loadNext, conditions } = this.__dataServiceInstanceCtrl.removeOptions.getValue()) {
@@ -120,7 +128,7 @@ export abstract class ArrayDataService<T> extends BaseDataService<Array<T>> {
     const
       ctrl = this.__dataServiceInstanceCtrl,
       { value, identifierProp, upsert } = ctrl,
-      items = ctrl.getValue(),
+      items = ctrl.getValue() || [],
       index = items.findIndex(({ [identifierProp]: id }) => id === newValue[identifierProp])
     index !== -1 ? merge(items[index], newValue) : upsert && items.push(newValue as T)
     handleNext(value, items)
