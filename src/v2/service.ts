@@ -12,7 +12,7 @@ import { Observable } from 'rxjs'
 
 export abstract class AbstractDataService<T> {
 
-  readonly value = ctrl<T>(this).value.pipe(
+  readonly value: Observable<T> = ctrl<T>(this).value.pipe(
     tap(value => {
       const
         instanceMethods = methods(this),
