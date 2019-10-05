@@ -1,4 +1,4 @@
-import { Observable, from, throwError } from 'rxjs'
+import { Observable, from, throwError, isObservable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import merge from 'lodash.merge'
 import { ctrl } from './__ctrl'
@@ -57,12 +57,15 @@ export function Upsert({ id }: UpsertOptions) {
             return throwError(response)
           })
         )
-      if (returned instanceof Promise) {
+      if (returned && typeof returned.then === `function`) {
         upserting.next(true)
         from(returned).pipe(dial()).subscribe()
       }
-      else if (returned instanceof Observable) {
-        upserting.next(true)
+      else if (isObservable(returned)) {
+        returned.subscribe = function () {
+          upserting.next(true)
+          return returned.subscribe.bind(returned)()
+        }
         returned = returned.pipe(dial())
       }
       else if (returned !== undefined) upsertValue(returned)

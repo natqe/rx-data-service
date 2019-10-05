@@ -1,4 +1,4 @@
-import { Observable, from, throwError } from 'rxjs'
+import { Observable, from, throwError, isObservable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import merge from 'lodash.merge'
 import { ctrl } from './__ctrl'
@@ -34,7 +34,7 @@ export function Delete({ loadNext = defaultOptions.loadNext, deleteAll = default
           if (target.constructor[optionsKey].type === Array && result && !deleteAll) {
             let afterRemove = instanceCtrl.getValue() as Array<any>
             if (Array.isArray(result)) for (const conditions of result) afterRemove = reject(afterRemove, conditions)
-            else  afterRemove = reject(afterRemove, result)
+            else afterRemove = reject(afterRemove, result)
             handleNext(value, afterRemove)
           }
           else if (deleteAll !== false || target.constructor[optionsKey].type !== Array) {
@@ -60,12 +60,15 @@ export function Delete({ loadNext = defaultOptions.loadNext, deleteAll = default
             return throwError(response)
           })
         )
-      if (returned instanceof Promise) {
+      if (returned && typeof returned.then === `function`) {
         deleting.next(true)
         from(returned).pipe(dial()).subscribe()
       }
-      else if (returned instanceof Observable) {
-        deleting.next(true)
+      else if (isObservable(returned)) {
+        returned.subscribe = function () {
+          deleting.next(true)
+          return returned.subscribe.bind(returned)()
+        }
         returned = returned.pipe(dial())
       }
       else if (returned !== undefined) deleteValue(returned)
