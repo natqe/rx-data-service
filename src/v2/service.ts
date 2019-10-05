@@ -8,7 +8,7 @@ import { methods } from './__util/methods'
 import get from 'lodash.get'
 import { LoadOptions } from './load'
 import { DeleteOptions } from './delete'
-import { Observable } from 'rxjs'
+import { Observable, isObservable } from 'rxjs'
 
 export abstract class AbstractDataService<T> {
 
@@ -18,15 +18,15 @@ export abstract class AbstractDataService<T> {
         instanceMethods = methods(this),
         loadOnSubscribe: string = instanceMethods.find(key => {
           const options = get(this, [key, optionsKey]) as LoadOptions
-          if(options instanceof LoadOptions) return options.loadOnSubscribe
+          if (options instanceof LoadOptions) return options.loadOnSubscribe
         }),
         loadNext = instanceMethods.some(key => {
           const options = get(this, [key, optionsKey]) as DeleteOptions
-          if(options instanceof DeleteOptions) return options.loadNext
+          if (options instanceof DeleteOptions) return options.loadNext
         })
       if (value === null && loadOnSubscribe) if (!ctrl<T>(this).clearWasActive || loadNext) {
         const returned = this[loadOnSubscribe]()
-        if(returned instanceof Observable) returned.pipe(take(1)).subscribe()
+        if (isObservable(returned)) returned.pipe(take(1)).subscribe()
       }
     }),
     protectValue()

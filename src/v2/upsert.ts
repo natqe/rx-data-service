@@ -62,9 +62,10 @@ export function Upsert({ id }: UpsertOptions) {
         from(returned).pipe(dial()).subscribe()
       }
       else if (isObservable(returned)) {
+        const subscribe = returned.subscribe.bind(returned)
         returned.subscribe = function () {
           upserting.next(true)
-          return returned.subscribe.bind(returned)()
+          return subscribe(arguments)
         }
         returned = returned.pipe(dial())
       }
