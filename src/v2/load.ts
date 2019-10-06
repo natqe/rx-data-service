@@ -51,7 +51,7 @@ export function Load({ loadOnSubscribe = defaultOptions.loadOnSubscribe } = defa
         const subscribe = returned.subscribe.bind(returned)
         returned.subscribe = function () {
           loading.next(true)
-          return subscribe(arguments)
+          return subscribe(...Array.from(arguments))
         }
         returned = returned.pipe(dial())
       }

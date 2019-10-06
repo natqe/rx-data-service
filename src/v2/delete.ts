@@ -68,7 +68,7 @@ export function Delete({ loadNext = defaultOptions.loadNext, deleteAll = default
         const subscribe = returned.subscribe.bind(returned)
         returned.subscribe = function () {
           deleting.next(true)
-          return subscribe(arguments)
+          return subscribe(...Array.from(arguments))
         }
         returned = returned.pipe(dial())
       }

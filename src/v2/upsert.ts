@@ -65,7 +65,7 @@ export function Upsert({ id }: UpsertOptions) {
         const subscribe = returned.subscribe.bind(returned)
         returned.subscribe = function () {
           upserting.next(true)
-          return subscribe(arguments)
+          return subscribe(...Array.from(arguments))
         }
         returned = returned.pipe(dial())
       }
