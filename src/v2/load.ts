@@ -48,10 +48,10 @@ export function Load({ loadOnSubscribe = defaultOptions.loadOnSubscribe } = defa
         from(returned).pipe(dial()).subscribe()
       }
       else if (isObservable(returned)) {
-        const { subscribe } = returned
+        const subscribe = returned.subscribe.bind(returned)
         returned.subscribe = function () {
           loading.next(true)
-          return subscribe.apply(returned, arguments)
+          return subscribe(...Array.from(arguments))
         }
         returned = returned.pipe(dial())
       }

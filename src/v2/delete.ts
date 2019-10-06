@@ -66,10 +66,10 @@ export function Delete({ loadNext = defaultOptions.loadNext, deleteAll = default
         from(returned).pipe(dial()).subscribe()
       }
       else if (isObservable(returned)) {
-        const { subscribe } = returned
+        const subscribe = returned.subscribe.bind(returned)
         returned.subscribe = function () {
           deleting.next(true)
-          return subscribe.apply(returned, arguments)
+          return subscribe(...Array.from(arguments))
         }
         returned = returned.pipe(dial())
       }

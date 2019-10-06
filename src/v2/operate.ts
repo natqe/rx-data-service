@@ -31,10 +31,10 @@ export function Operate() {
         from(returned).pipe(dial()).subscribe()
       }
       else if (isObservable(returned)) {
-        const { subscribe } = returned
+        const subscribe = returned.subscribe.bind(returned)
         returned.subscribe = function () {
           operating.next(true)
-          return subscribe.apply(returned, arguments)
+          return subscribe(...Array.from(arguments))
         }
         returned = returned.pipe(dial())
       }
