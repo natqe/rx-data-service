@@ -5,6 +5,7 @@ import { ctrl } from './__ctrl'
 import { handleNext } from './__util/handle-next'
 import cloneDeep from 'lodash.clonedeep'
 import { optionsKey } from './__key'
+import get from 'lodash.get'
 
 export class UpsertOptions {
   id: string | number
@@ -26,7 +27,7 @@ export function Upsert({ id }: UpsertOptions) {
         count = 0
       const
         upsertValue = result => {
-          if (target.constructor[optionsKey].type === Array) {
+          if (get(target.constructor[optionsKey], `type`, Object) === Array) {
             const
               items = ctrl<Array<any>>(this).getValue() || [],
               upsertOne = (item) => {

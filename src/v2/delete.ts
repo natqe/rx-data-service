@@ -6,6 +6,7 @@ import { handleNext } from './__util/handle-next'
 import cloneDeep from 'lodash.clonedeep'
 import { optionsKey } from './__key'
 import reject from 'lodash.reject'
+import get from 'lodash.get'
 
 export class DeleteOptions {
   loadNext?: boolean
@@ -31,13 +32,13 @@ export function Delete({ loadNext = defaultOptions.loadNext, deleteAll = default
         count = 0
       const
         deleteValue = result => {
-          if (target.constructor[optionsKey].type === Array && result && !deleteAll) {
+          if (get(target.constructor[optionsKey], `type`, Object) === Array && result && !deleteAll) {
             let afterRemove = instanceCtrl.getValue() as Array<any>
             if (Array.isArray(result)) for (const conditions of result) afterRemove = reject(afterRemove, conditions)
             else afterRemove = reject(afterRemove, result)
             handleNext(value, afterRemove)
           }
-          else if (deleteAll !== false || target.constructor[optionsKey].type !== Array) {
+          else if (deleteAll !== false || get(target.constructor[optionsKey], `type`, Object) !== Array) {
             instanceCtrl.clearWasActive = true
             handleNext(value, null)
           }
