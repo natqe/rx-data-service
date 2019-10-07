@@ -10,16 +10,16 @@ export function Operate() {
         instanceCtrl = ctrl(this),
         { operating, operatingSuccess } = instanceCtrl,
         returned = original.apply(this, arguments),
-        count = 0
+        count = 1
       const dial = () => <T>(src: Observable<T>) => src.pipe(
         tap(() => {
-          if (++count === 1) {
+          if (++count < 2) {
             operating.next(false)
             operatingSuccess.next(true)
           }
         }),
         catchError(response => {
-          if (++count === 1) {
+          if (++count < 2) {
             operating.next(false)
             operatingSuccess.next(false)
           }
@@ -33,6 +33,7 @@ export function Operate() {
       else if (isObservable(returned)) {
         const subscribe = returned.subscribe.bind(returned)
         returned.subscribe = function () {
+          --count
           operating.next(true)
           return subscribe(...Array.from(arguments))
         }

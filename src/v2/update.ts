@@ -1,79 +1,78 @@
 import { Observable, from, throwError, isObservable } from 'rxjs'
-import { catchError, map } from 'rxjs/operators'
-import merge from 'lodash.merge'
+import { catchError, tap, map } from 'rxjs/operators'
 import { ctrl } from './__ctrl'
+import get from 'lodash.get'
+import { optionsKey } from './__key'
 import { handleNext } from './__util/handle-next'
 import cloneDeep from 'lodash.clonedeep'
-import { optionsKey } from './__key'
-import get from 'lodash.get'
+import merge from 'lodash.merge'
 
-export class UpsertOptions {
+export class UpdateOptions {
   id?: string | number
-  constructor(value?: UpsertOptions) {
+  constructor(value?: UpdateOptions) {
     merge(this, value)
   }
 }
 
-export function Upsert({ id }: UpsertOptions) {
+export function Update({ id }: UpdateOptions) {
   return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
     const original = descriptor.value
     descriptor.value = function () {
       let
         instanceCtrl = ctrl(this),
-        { value, upserting, upsertingSuccess } = instanceCtrl,
+        { updating, updatingSuccess, value } = instanceCtrl,
         returned = original.apply(this, arguments),
         count = 1
       const
-        upsertValue = result => {
+        updateValue = result => {
           if (get(target.constructor[optionsKey], `type`, Object) === Array) {
             const
               items = ctrl<Array<any>>(this).getValue() || [],
-              upsertOne = (item) => {
+              updateOne = (item) => {
                 const index = id ? items.findIndex(({ [id]: _id }) => _id === item[id]) : -1
-                index !== -1 ? merge(items[index], item) : items.push(item)
+                if (index !== -1) merge(items[index], item)
               }
-            if (Array.isArray(result)) for (const item of result) upsertOne(item)
-            else upsertOne(result)
+            if (Array.isArray(result)) for (const item of result) updateOne(item)
+            else updateOne(result)
             handleNext(value, items)
           }
-          else handleNext(instanceCtrl.value, instanceCtrl.value.value ? merge(instanceCtrl.getValue(), result) : result)
+          else if (instanceCtrl.value.value) handleNext(value, merge(instanceCtrl.getValue(), result))
         },
         dial = () => <T>(src: Observable<T>) => src.pipe(
           map(result => {
             if (++count < 2) {
-              upsertValue(cloneDeep(result))
-              upserting.next(false)
-              upsertingSuccess.next(true)
+              updateValue(cloneDeep(result))
+              updating.next(false)
+              updatingSuccess.next(true)
               return cloneDeep(result)
             }
             else return result
           }),
           catchError(response => {
             if (++count < 2) {
-              upserting.next(false)
-              upsertingSuccess.next(false)
+              updating.next(false)
+              updatingSuccess.next(false)
             }
             return throwError(response)
           })
         )
       if (returned && typeof returned.then === `function`) {
-        upserting.next(true)
+        updating.next(true)
         from(returned).pipe(dial()).subscribe()
       }
       else if (isObservable(returned)) {
         const subscribe = returned.subscribe.bind(returned)
         returned.subscribe = function () {
           --count
-          upserting.next(true)
+          updating.next(true)
           return subscribe(...Array.from(arguments))
         }
         returned = returned.pipe(dial())
       }
-      else if (returned !== undefined) upsertValue(returned)
+      else if (returned !== undefined) updateValue(returned)
       else { }
       return returned
     }
-    descriptor.value[optionsKey] = new UpsertOptions({ id })
     return descriptor
   }
 }

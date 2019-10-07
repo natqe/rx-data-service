@@ -29,7 +29,7 @@ export function Delete({ loadNext = defaultOptions.loadNext, deleteAll = default
         instanceCtrl = ctrl(this),
         { value, deleting, deletingSuccess } = instanceCtrl,
         returned = original.apply(this, arguments),
-        count = 0
+        count = 1
       const
         deleteValue = result => {
           if (get(target.constructor[optionsKey], `type`, Object) === Array && result && !deleteAll) {
@@ -45,7 +45,7 @@ export function Delete({ loadNext = defaultOptions.loadNext, deleteAll = default
         },
         dial = () => <T>(src: Observable<T>) => src.pipe(
           map(result => {
-            if (++count === 1) {
+            if (++count < 2) {
               deleteValue(cloneDeep(result))
               deleting.next(false)
               deletingSuccess.next(true)
@@ -54,7 +54,7 @@ export function Delete({ loadNext = defaultOptions.loadNext, deleteAll = default
             else return result
           }),
           catchError(response => {
-            if (++count === 1) {
+            if (++count < 2) {
               deleting.next(false)
               deletingSuccess.next(false)
             }
@@ -68,6 +68,7 @@ export function Delete({ loadNext = defaultOptions.loadNext, deleteAll = default
       else if (isObservable(returned)) {
         const subscribe = returned.subscribe.bind(returned)
         returned.subscribe = function () {
+          --count
           deleting.next(true)
           return subscribe(...Array.from(arguments))
         }

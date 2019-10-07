@@ -42,6 +42,14 @@ export abstract class AbstractDataService<T> {
     ctrl<T>(this).dialOperating()
   )
 
+  readonly inserting = ctrl<T>(this).inserting.pipe(
+    ctrl<T>(this).dialOperating()
+  )
+
+  readonly updating = ctrl<T>(this).updating.pipe(
+    ctrl<T>(this).dialOperating()
+  )
+
   readonly deleting = ctrl<T>(this).deleting.pipe(
     ctrl<T>(this).dialOperating()
   )
@@ -56,6 +64,14 @@ export abstract class AbstractDataService<T> {
 
   readonly upsertingSuccess = ctrl<T>(this).upsertingSuccess.pipe(
     ctrl<T>(this).waitAndDialOperatingSuccess(ctrl<T>(this).upserting)
+  )
+
+  readonly insertingSuccess = ctrl<T>(this).insertingSuccess.pipe(
+    ctrl<T>(this).waitAndDialOperatingSuccess(ctrl<T>(this).inserting)
+  )
+
+  readonly updatingSuccess = ctrl<T>(this).updatingSuccess.pipe(
+    ctrl<T>(this).waitAndDialOperatingSuccess(ctrl<T>(this).updating)
   )
 
   readonly deletingSuccess = ctrl<T>(this).deletingSuccess.pipe(

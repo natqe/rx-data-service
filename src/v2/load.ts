@@ -22,12 +22,12 @@ export function Load({ loadOnSubscribe = defaultOptions.loadOnSubscribe } = defa
       let
         { value, loading, loadingSuccess } = ctrl(this),
         returned = original.apply(this, arguments),
-        count = 0
+        count = 1
       const
         setValue = result => handleNext(value, result),
         dial = () => <T>(src: Observable<T>) => src.pipe(
           map(result => {
-            if (++count === 1) {
+            if (++count < 2) {
               setValue(cloneDeep(result))
               loading.next(false)
               loadingSuccess.next(true)
@@ -36,7 +36,7 @@ export function Load({ loadOnSubscribe = defaultOptions.loadOnSubscribe } = defa
             else return result
           }),
           catchError(response => {
-            if (++count === 1) {
+            if (++count < 2) {
               loading.next(false)
               loadingSuccess.next(false)
             }
@@ -50,6 +50,7 @@ export function Load({ loadOnSubscribe = defaultOptions.loadOnSubscribe } = defa
       else if (isObservable(returned)) {
         const subscribe = returned.subscribe.bind(returned)
         returned.subscribe = function () {
+          --count
           loading.next(true)
           return subscribe(...Array.from(arguments))
         }

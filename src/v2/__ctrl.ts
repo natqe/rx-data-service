@@ -16,6 +16,10 @@ class Ctrl<T> {
 
   readonly upserting = new BehaviorSubject<boolean>(null)
 
+  readonly inserting = new BehaviorSubject<boolean>(null)
+
+  readonly updating = new BehaviorSubject<boolean>(null)
+
   readonly deleting = new BehaviorSubject<boolean>(null)
 
   readonly operatingSuccess = new BehaviorSubject<boolean>(null)
@@ -23,6 +27,10 @@ class Ctrl<T> {
   readonly loadingSuccess = new BehaviorSubject<boolean>(null)
 
   readonly upsertingSuccess = new BehaviorSubject<boolean>(null)
+
+  readonly insertingSuccess = new BehaviorSubject<boolean>(null)
+
+  readonly updatingSuccess = new BehaviorSubject<boolean>(null)
 
   readonly deletingSuccess = new BehaviorSubject<boolean>(null)
 
