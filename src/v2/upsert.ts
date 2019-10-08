@@ -1,20 +1,25 @@
 import { Observable, from, throwError, isObservable } from 'rxjs'
-import { catchError, map } from 'rxjs/operators'
+import { catchError, map, take, tap } from 'rxjs/operators'
 import merge from 'lodash.merge'
 import { ctrl } from './__ctrl'
 import { handleNext } from './__util/handle-next'
 import cloneDeep from 'lodash.clonedeep'
 import { optionsKey } from './__key'
 import get from 'lodash.get'
+import { methods } from './__util/methods'
+import { LoadOptions } from './load'
 
 export class UpsertOptions {
   id?: string | number
+  refreshValue?: boolean
   constructor(value?: UpsertOptions) {
     merge(this, value)
   }
 }
 
-export function Upsert({ id }: UpsertOptions) {
+const defaults = new UpsertOptions({ refreshValue: null })
+
+export function Upsert({ id, refreshValue = defaults.refreshValue } = defaults) {
   return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
     const original = descriptor.value
     descriptor.value = function () {
@@ -22,7 +27,14 @@ export function Upsert({ id }: UpsertOptions) {
         instanceCtrl = ctrl(this),
         { value, upserting, upsertingSuccess } = instanceCtrl,
         returned = original.apply(this, arguments),
-        count = 1
+        count = 1,
+        refresh = () => {
+          const method = methods(this).find(key => get(this, [key, optionsKey]) instanceof LoadOptions)
+          if (method !== null && method !== undefined) {
+            const returned = this[method]()
+            if (isObservable(returned)) returned.pipe(take(1)).subscribe()
+          }
+        }
       const
         upsertValue = result => {
           if (get(target.constructor[optionsKey], `type`, Object) === Array) {
@@ -39,14 +51,13 @@ export function Upsert({ id }: UpsertOptions) {
           else handleNext(instanceCtrl.value, instanceCtrl.value.value ? merge(instanceCtrl.getValue(), result) : result)
         },
         dial = () => <T>(src: Observable<T>) => src.pipe(
-          map(result => {
+          tap(result => {
             if (++count < 2) {
-              upsertValue(cloneDeep(result))
+              if (!refreshValue)   upsertValue(cloneDeep(result))
               upserting.next(false)
               upsertingSuccess.next(true)
-              return cloneDeep(result)
+              if (refreshValue) refresh()
             }
-            else return result
           }),
           catchError(response => {
             if (++count < 2) {
@@ -69,11 +80,16 @@ export function Upsert({ id }: UpsertOptions) {
         }
         returned = returned.pipe(dial())
       }
-      else if (returned !== undefined) upsertValue(returned)
-      else { }
+      else if (returned !== undefined) {
+        if (!refreshValue)   upsertValue(returned)
+        else refresh()
+      }
+      else {
+        if (refreshValue) refresh()
+      }
       return returned
     }
-    descriptor.value[optionsKey] = new UpsertOptions({ id })
+    descriptor.value[optionsKey] = new UpsertOptions({ id, refreshValue })
     return descriptor
   }
 }

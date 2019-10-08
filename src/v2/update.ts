@@ -1,20 +1,25 @@
 import { Observable, from, throwError, isObservable } from 'rxjs'
-import { catchError, tap, map } from 'rxjs/operators'
+import { catchError, tap, map, take } from 'rxjs/operators'
 import { ctrl } from './__ctrl'
 import get from 'lodash.get'
 import { optionsKey } from './__key'
 import { handleNext } from './__util/handle-next'
 import cloneDeep from 'lodash.clonedeep'
 import merge from 'lodash.merge'
+import { methods } from './__util/methods'
+import { LoadOptions } from './load'
 
 export class UpdateOptions {
   id?: string | number
+  refreshValue?: boolean
   constructor(value?: UpdateOptions) {
     merge(this, value)
   }
 }
 
-export function Update({ id }: UpdateOptions) {
+const defaults = new UpdateOptions({ refreshValue: null })
+
+export function Update({ id, refreshValue = defaults.refreshValue } = defaults) {
   return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
     const original = descriptor.value
     descriptor.value = function () {
@@ -22,7 +27,14 @@ export function Update({ id }: UpdateOptions) {
         instanceCtrl = ctrl(this),
         { updating, updatingSuccess, value } = instanceCtrl,
         returned = original.apply(this, arguments),
-        count = 1
+        count = 1,
+        refresh = () => {
+          const method = methods(this).find(key => get(this, [key, optionsKey]) instanceof LoadOptions)
+          if (method !== null && method !== undefined) {
+            const returned = this[method]()
+            if (isObservable(returned)) returned.pipe(take(1)).subscribe()
+          }
+        }
       const
         updateValue = result => {
           if (get(target.constructor[optionsKey], `type`, Object) === Array) {
@@ -39,14 +51,13 @@ export function Update({ id }: UpdateOptions) {
           else if (instanceCtrl.value.value) handleNext(value, merge(instanceCtrl.getValue(), result))
         },
         dial = () => <T>(src: Observable<T>) => src.pipe(
-          map(result => {
+          tap(result => {
             if (++count < 2) {
-              updateValue(cloneDeep(result))
+              if (!refreshValue)  updateValue(cloneDeep(result))
               updating.next(false)
               updatingSuccess.next(true)
-              return cloneDeep(result)
+              if (refreshValue) refresh()
             }
-            else return result
           }),
           catchError(response => {
             if (++count < 2) {
@@ -69,10 +80,16 @@ export function Update({ id }: UpdateOptions) {
         }
         returned = returned.pipe(dial())
       }
-      else if (returned !== undefined) updateValue(returned)
-      else { }
+      else if (returned !== undefined) {
+        if (!refreshValue) updateValue(returned)
+        else refresh()
+      }
+      else {
+        if (refreshValue) refresh()
+      }
       return returned
     }
+    descriptor.value[optionsKey] = new UpdateOptions({ refreshValue, id })
     return descriptor
   }
 }

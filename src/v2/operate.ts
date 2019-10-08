@@ -1,8 +1,22 @@
 import { Observable, from, throwError, isObservable } from 'rxjs'
-import { catchError, tap } from 'rxjs/operators'
+import { catchError, tap, take } from 'rxjs/operators'
 import { ctrl } from './__ctrl'
+import merge from 'lodash.merge'
+import { methods } from './__util/methods'
+import get from 'lodash.get'
+import { optionsKey } from './__key'
+import { LoadOptions } from './load'
 
-export function Operate() {
+export class OperateOptions {
+  refreshValue?: boolean
+  constructor(value?: OperateOptions) {
+    merge(this, value)
+  }
+}
+
+const defaults = new OperateOptions({ refreshValue: null })
+
+export function Operate({ refreshValue = defaults.refreshValue } = defaults) {
   return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
     const original = descriptor.value
     descriptor.value = function () {
@@ -10,12 +24,20 @@ export function Operate() {
         instanceCtrl = ctrl(this),
         { operating, operatingSuccess } = instanceCtrl,
         returned = original.apply(this, arguments),
-        count = 1
+        count = 1,
+        refresh = () => {
+          const method = methods(this).find(key => get(this, [key, optionsKey]) instanceof LoadOptions)
+          if (method !== null && method !== undefined) {
+            const returned = this[method]()
+            if (isObservable(returned)) returned.pipe(take(1)).subscribe()
+          }
+        }
       const dial = () => <T>(src: Observable<T>) => src.pipe(
         tap(() => {
           if (++count < 2) {
             operating.next(false)
             operatingSuccess.next(true)
+            if (refreshValue) refresh()
           }
         }),
         catchError(response => {
@@ -39,9 +61,12 @@ export function Operate() {
         }
         returned = returned.pipe(dial())
       }
-      else { }
+      else {
+        if (refreshValue) refresh()
+      }
       return returned
     }
+    descriptor.value[optionsKey] = new OperateOptions({ refreshValue })
     return descriptor
   }
 }

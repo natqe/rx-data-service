@@ -1,12 +1,24 @@
 import { Observable, from, throwError, isObservable } from 'rxjs'
-import { catchError, tap, map } from 'rxjs/operators'
+import { catchError, tap, map, take } from 'rxjs/operators'
 import { ctrl } from './__ctrl'
 import get from 'lodash.get'
 import { optionsKey } from './__key'
 import { handleNext } from './__util/handle-next'
 import cloneDeep from 'lodash.clonedeep'
+import merge from 'lodash.merge'
+import { methods } from './__util/methods'
+import { LoadOptions } from './load'
 
-export function Insert() {
+export class InsertOptions {
+  refreshValue?: boolean
+  constructor(value?: InsertOptions) {
+    merge(this, value)
+  }
+}
+
+const defaults = new InsertOptions({ refreshValue: null })
+
+export function Insert({ refreshValue = defaults.refreshValue } = defaults) {
   return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
     const original = descriptor.value
     descriptor.value = function () {
@@ -14,7 +26,14 @@ export function Insert() {
         instanceCtrl = ctrl(this),
         { inserting, insertingSuccess, value } = instanceCtrl,
         returned = original.apply(this, arguments),
-        count = 1
+        count = 1,
+        refresh = () => {
+          const method = methods(this).find(key => get(this, [key, optionsKey]) instanceof LoadOptions)
+          if (method !== null && method !== undefined) {
+            const returned = this[method]()
+            if (isObservable(returned)) returned.pipe(take(1)).subscribe()
+          }
+        }
       const
         insertValue = result => {
           if (get(target.constructor[optionsKey], `type`, Object) === Array) {
@@ -24,14 +43,13 @@ export function Insert() {
           else handleNext(value, result)
         },
         dial = () => <T>(src: Observable<T>) => src.pipe(
-          map(result => {
+          tap(result => {
             if (++count < 2) {
-              insertValue(cloneDeep(result))
+              if (!refreshValue) insertValue(cloneDeep(result))
               inserting.next(false)
               insertingSuccess.next(true)
-              return cloneDeep(result)
+              if (refreshValue) refresh()
             }
-            else return result
           }),
           catchError(response => {
             if (++count < 2) {
@@ -54,10 +72,16 @@ export function Insert() {
         }
         returned = returned.pipe(dial())
       }
-      else if (returned !== undefined) insertValue(returned)
-      else { }
+      else if (returned !== undefined) {
+        if (!refreshValue) insertValue(returned)
+        else refresh()
+      }
+      else {
+        if (refreshValue) refresh()
+      }
       return returned
     }
+    descriptor.value[optionsKey] = new InsertOptions({ refreshValue })
     return descriptor
   }
 }
