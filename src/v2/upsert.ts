@@ -38,6 +38,7 @@ export function Upsert({ id, refreshValue = defaults.refreshValue } = defaults) 
       const
         upsertValue = result => {
           if (get(target.constructor[optionsKey], `type`, Object) === Array) {
+            if (id === null || id === undefined) id = get(target.constructor[optionsKey], `id`)
             const
               items = ctrl<Array<any>>(this).getValue() || [],
               upsertOne = (item) => {

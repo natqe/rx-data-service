@@ -82,16 +82,20 @@ export abstract class AbstractDataService<T> {
 
 export class DataServiceOptions {
   type?: typeof Array | typeof Object
+  id?: string | number
   constructor(value?: DataServiceOptions) {
     merge(this, value)
   }
 }
 
-const defaultOptions = new DataServiceOptions({ type: Object })
+const defaults = new DataServiceOptions({
+  type: Array,
+  id: null
+})
 
-export function DataService({ type = defaultOptions.type } = defaultOptions) {
+export function DataService({ type = defaults.type, id = defaults.id } = defaults) {
   return function (target) {
-    target[optionsKey] = new DataServiceOptions({ type })
+    target[optionsKey] = new DataServiceOptions({ type, id })
     return target
   }
 }
