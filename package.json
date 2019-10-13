@@ -29,6 +29,6 @@
     "@types/lodash.reject": "4.6.6",
     "@types/lodash.remove": "4.7.6",
     "@types/lodash.some": "4.6.6",
-    "typescript": "3.6.3"
+    "typescript": "3.6.4"
   }
 }

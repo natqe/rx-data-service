@@ -10,7 +10,25 @@ class Ctrl<T> {
 
   clearWasActive: boolean
 
-  private prevSnapshot: this['snapshot']
+  private prevSnapshot: {
+    value: T,
+    operating: boolean,
+    loading: boolean,
+    setting: boolean,
+    upserting: boolean,
+    inserting: boolean,
+    creating: boolean,
+    updating: boolean,
+    deleting: boolean,
+    operatingSuccess: boolean,
+    loadingSuccess: boolean,
+    settingSuccess: boolean,
+    upsertingSuccess: boolean,
+    insertingSuccess: boolean,
+    creatingSuccess: boolean,
+    updatingSuccess: boolean,
+    deletingSuccess: boolean
+  }
 
   readonly value = new BehaviorSubject<T>(null)
 
@@ -53,10 +71,10 @@ class Ctrl<T> {
     return cloneDeep(this.value.value)
   }
 
-  get snapshot() {
+  get snapshot(): Ctrl<T>['prevSnapshot'] {
     const
       { operating, loading, upserting, inserting, updating, deleting, operatingSuccess, loadingSuccess, upsertingSuccess, insertingSuccess, updatingSuccess, deletingSuccess, prevSnapshot } = this,
-      snapshot = {
+      snapshot: Ctrl<T>['prevSnapshot'] = {
         value: this.getValue(),
         operating: operating.value,
         loading: loading.value,
