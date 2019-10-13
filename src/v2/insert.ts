@@ -82,3 +82,5 @@ export function Insert({ refreshValue = defaults.refreshValue } = defaults) {
     return descriptor
   }
 }
+
+export { Insert as Create }
