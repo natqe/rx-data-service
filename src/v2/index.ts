@@ -1,6 +1,6 @@
 import { Delete } from './delete'
 import { Upsert } from './upsert'
-import { Load } from './load'
+import { Load, Set } from './load'
 import { Insert } from './insert'
 import { Update } from './update'
 import { Operate } from './operate'
@@ -14,6 +14,7 @@ const rxDataService = {
   Update,
   Upsert,
   Load,
+  Set,
   AbstractDataService
 }
 
@@ -26,6 +27,7 @@ export {
   Operate,
   Upsert,
   Load,
+  Set,
   AbstractDataService
 }
 

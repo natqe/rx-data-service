@@ -1,5 +1,5 @@
 import { Observable, from, throwError, isObservable } from 'rxjs'
-import { catchError, map } from 'rxjs/operators'
+import { catchError, map, tap } from 'rxjs/operators'
 import merge from 'lodash.merge'
 import { ctrl } from './__ctrl'
 import { handleNext } from './__util/handle-next'
@@ -26,24 +26,19 @@ export function Load({ loadOnSubscribe = defaultOptions.loadOnSubscribe } = defa
       const
         setValue = result => handleNext(value, result),
         dial = () => <T>(src: Observable<T>) => src.pipe(
-          map(result => {
-            if (++count < 2) {
-              setValue(cloneDeep(result))
-              loading.next(false)
-              loadingSuccess.next(true)
-              return cloneDeep(result)
-            }
-            else return result
+          tap(result => {
+            setValue(cloneDeep(result))
+            if (++count < 2) loading.next(false)
+            loadingSuccess.next(true)
           }),
           catchError(response => {
-            if (++count < 2) {
-              loading.next(false)
-              loadingSuccess.next(false)
-            }
+            if (++count < 2) loading.next(false)
+            loadingSuccess.next(false)
             return throwError(response)
           })
         )
       if (returned && typeof returned.then === `function`) {
+        --count
         loading.next(true)
         from(returned).pipe(dial()).subscribe()
       }
@@ -64,3 +59,5 @@ export function Load({ loadOnSubscribe = defaultOptions.loadOnSubscribe } = defa
     return descriptor
   }
 }
+
+export { Load as Set }

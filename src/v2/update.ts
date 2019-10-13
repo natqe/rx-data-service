@@ -52,22 +52,19 @@ export function Update({ id, refreshValue = defaults.refreshValue } = defaults) 
         },
         dial = () => <T>(src: Observable<T>) => src.pipe(
           tap(result => {
-            if (++count < 2) {
-              if (!refreshValue)  updateValue(cloneDeep(result))
-              updating.next(false)
-              updatingSuccess.next(true)
-              if (refreshValue) refresh()
-            }
+            if (!refreshValue) updateValue(cloneDeep(result))
+            if (++count < 2) updating.next(false)
+            updatingSuccess.next(true)
+            if (refreshValue) refresh()
           }),
           catchError(response => {
-            if (++count < 2) {
-              updating.next(false)
-              updatingSuccess.next(false)
-            }
+            if (++count < 2) updating.next(false)
+            updatingSuccess.next(false)
             return throwError(response)
           })
         )
       if (returned && typeof returned.then === `function`) {
+        --count
         updating.next(true)
         from(returned).pipe(dial()).subscribe()
       }

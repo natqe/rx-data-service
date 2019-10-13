@@ -52,22 +52,19 @@ export function Upsert({ id, refreshValue = defaults.refreshValue } = defaults) 
         },
         dial = () => <T>(src: Observable<T>) => src.pipe(
           tap(result => {
-            if (++count < 2) {
-              if (!refreshValue)   upsertValue(cloneDeep(result))
-              upserting.next(false)
-              upsertingSuccess.next(true)
-              if (refreshValue) refresh()
-            }
+            if (!refreshValue) upsertValue(cloneDeep(result))
+            if (++count < 2) upserting.next(false)
+            upsertingSuccess.next(true)
+            if (refreshValue) refresh()
           }),
           catchError(response => {
-            if (++count < 2) {
-              upserting.next(false)
-              upsertingSuccess.next(false)
-            }
+            if (++count < 2) upserting.next(false)
+            upsertingSuccess.next(false)
             return throwError(response)
           })
         )
       if (returned && typeof returned.then === `function`) {
+        --count
         upserting.next(true)
         from(returned).pipe(dial()).subscribe()
       }
@@ -81,7 +78,7 @@ export function Upsert({ id, refreshValue = defaults.refreshValue } = defaults) 
         returned = returned.pipe(dial())
       }
       else if (returned !== undefined) {
-        if (!refreshValue)   upsertValue(returned)
+        if (!refreshValue) upsertValue(returned)
         else refresh()
       }
       else {

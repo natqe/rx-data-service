@@ -34,21 +34,18 @@ export function Operate({ refreshValue = defaults.refreshValue } = defaults) {
         }
       const dial = () => <T>(src: Observable<T>) => src.pipe(
         tap(() => {
-          if (++count < 2) {
-            operating.next(false)
-            operatingSuccess.next(true)
-            if (refreshValue) refresh()
-          }
+          if (++count < 2) operating.next(false)
+          operatingSuccess.next(true)
+          if (refreshValue) refresh()
         }),
         catchError(response => {
-          if (++count < 2) {
-            operating.next(false)
-            operatingSuccess.next(false)
-          }
+          if (++count < 2) operating.next(false)
+          operatingSuccess.next(false)
           return throwError(response)
         })
       )
       if (returned && typeof returned.then === `function`) {
+        --count
         operating.next(true)
         from(returned).pipe(dial()).subscribe()
       }

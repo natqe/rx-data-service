@@ -56,22 +56,19 @@ export function Delete({ loadNext = defaults.loadNext, deleteAll = defaults.dele
         },
         dial = () => <T>(src: Observable<T>) => src.pipe(
           tap(result => {
-            if (++count < 2) {
-              if (!refreshValue) deleteValue(cloneDeep(result))
-              deleting.next(false)
-              deletingSuccess.next(true)
-              if (refreshValue) refresh()
-            }
+            if (!refreshValue) deleteValue(cloneDeep(result))
+            if (++count < 2) deleting.next(false)
+            deletingSuccess.next(true)
+            if (refreshValue) refresh()
           }),
           catchError(response => {
-            if (++count < 2) {
-              deleting.next(false)
-              deletingSuccess.next(false)
-            }
+            if (++count < 2) deleting.next(false)
+            deletingSuccess.next(false)
             return throwError(response)
           })
         )
       if (returned && typeof returned.then === `function`) {
+        --count
         deleting.next(true)
         from(returned).pipe(dial()).subscribe()
       }

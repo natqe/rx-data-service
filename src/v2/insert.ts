@@ -44,22 +44,19 @@ export function Insert({ refreshValue = defaults.refreshValue } = defaults) {
         },
         dial = () => <T>(src: Observable<T>) => src.pipe(
           tap(result => {
-            if (++count < 2) {
-              if (!refreshValue) insertValue(cloneDeep(result))
-              inserting.next(false)
-              insertingSuccess.next(true)
-              if (refreshValue) refresh()
-            }
+            if (!refreshValue) insertValue(cloneDeep(result))
+            if (++count < 2) inserting.next(false)
+            insertingSuccess.next(true)
+            if (refreshValue) refresh()
           }),
           catchError(response => {
-            if (++count < 2) {
-              inserting.next(false)
-              insertingSuccess.next(false)
-            }
+            if (++count < 2) inserting.next(false)
+            insertingSuccess.next(false)
             return throwError(response)
           })
         )
       if (returned && typeof returned.then === `function`) {
+        --count
         inserting.next(true)
         from(returned).pipe(dial()).subscribe()
       }
