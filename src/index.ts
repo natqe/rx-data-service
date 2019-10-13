@@ -1,19 +1,36 @@
-import { ArrayDataService, arrayDataServiceOptions } from './array'
-import { DataService, dataServiceOptions, ObjectDataService } from './object'
+import { Delete } from './delete'
+import { Upsert } from './upsert'
+import { Load, Set } from './load'
+import { Insert, Create } from './insert'
+import { Update } from './update'
+import { Operate } from './operate'
+import { DataService, AbstractDataService } from './service'
 
 const rxDataService = {
   DataService,
-  ObjectDataService,
-  ArrayDataService
+  Operate,
+  Delete,
+  Insert,
+  Create,
+  Update,
+  Upsert,
+  Load,
+  Set,
+  AbstractDataService
 }
 
 export {
   rxDataService,
   DataService,
-  ObjectDataService,
-  ArrayDataService,
-  dataServiceOptions,
-  arrayDataServiceOptions
+  Delete,
+  Insert,
+  Create,
+  Update,
+  Operate,
+  Upsert,
+  Load,
+  Set,
+  AbstractDataService
 }
 
 export default rxDataService

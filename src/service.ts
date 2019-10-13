@@ -86,6 +86,10 @@ export abstract class AbstractDataService<T> {
     ctrl<T>(this).waitAndDialOperatingSuccess(ctrl<T>(this).deleting)
   )
 
+  get snapshot() {
+    return ctrl<T>(this).snapshot
+  }
+
 }
 
 export class DataServiceOptions {

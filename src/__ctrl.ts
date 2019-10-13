@@ -3,10 +3,14 @@ import { BehaviorSubject, Observable } from 'rxjs'
 import { tap } from 'rxjs/operators'
 import { waitUntilFalse } from './__util/wait-until-false'
 import { AbstractDataService } from './service'
+import isEqual from 'lodash.isequal'
+import { deepFreeze } from './__util/deep-freeze'
 
 class Ctrl<T> {
 
   clearWasActive: boolean
+
+  private prevSnapshot: this['snapshot']
 
   readonly value = new BehaviorSubject<T>(null)
 
@@ -47,6 +51,31 @@ class Ctrl<T> {
 
   getValue() {
     return cloneDeep(this.value.value)
+  }
+
+  get snapshot() {
+    const
+      { operating, loading, upserting, inserting, updating, deleting, operatingSuccess, loadingSuccess, upsertingSuccess, insertingSuccess, updatingSuccess, deletingSuccess, prevSnapshot } = this,
+      snapshot = {
+        value: this.getValue(),
+        operating: operating.value,
+        loading: loading.value,
+        setting: loading.value,
+        upserting: upserting.value,
+        inserting: inserting.value,
+        creating: inserting.value,
+        updating: updating.value,
+        deleting: deleting.value,
+        operatingSuccess: operatingSuccess.value,
+        loadingSuccess: loadingSuccess.value,
+        settingSuccess: loadingSuccess.value,
+        upsertingSuccess: upsertingSuccess.value,
+        insertingSuccess: insertingSuccess.value,
+        creatingSuccess: insertingSuccess.value,
+        updatingSuccess: updatingSuccess.value,
+        deletingSuccess: deletingSuccess.value
+      }
+    return isEqual(prevSnapshot, snapshot) ? prevSnapshot as typeof snapshot : this.prevSnapshot = deepFreeze(snapshot)
   }
 
 }
