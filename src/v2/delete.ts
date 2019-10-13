@@ -43,13 +43,13 @@ export function Delete({ loadNext = defaults.loadNext, deleteAll = defaults.dele
         }
       const
         deleteValue = result => {
-          if (get(target.constructor[optionsKey], `type`, Object) === Array && result && !deleteAll) {
+          if (get(target.constructor[optionsKey], `type`, Array) === Array && result && !deleteAll) {
             let afterRemove = instanceCtrl.getValue() as Array<any>
             if (Array.isArray(result)) for (const conditions of result) afterRemove = reject(afterRemove, conditions)
             else afterRemove = reject(afterRemove, result)
             handleNext(value, afterRemove)
           }
-          else if (deleteAll !== false || get(target.constructor[optionsKey], `type`, Object) !== Array) {
+          else if (deleteAll !== false || get(target.constructor[optionsKey], `type`, Array) !== Array) {
             instanceCtrl.clearWasActive = true
             handleNext(value, null)
           }

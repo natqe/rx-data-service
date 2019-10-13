@@ -37,7 +37,7 @@ export function Update({ id, refreshValue = defaults.refreshValue } = defaults) 
         }
       const
         updateValue = result => {
-          if (get(target.constructor[optionsKey], `type`, Object) === Array) {
+          if (get(target.constructor[optionsKey], `type`, Array) === Array) {
             if (id === null || id === undefined) id = get(target.constructor[optionsKey], `id`)
             const
               items = ctrl<Array<any>>(this).getValue() || [],

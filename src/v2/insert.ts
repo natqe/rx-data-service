@@ -36,7 +36,7 @@ export function Insert({ refreshValue = defaults.refreshValue } = defaults) {
         }
       const
         insertValue = result => {
-          if (get(target.constructor[optionsKey], `type`, Object) === Array) {
+          if (get(target.constructor[optionsKey], `type`, Array) === Array) {
             const items = ctrl<Array<any>>(this).getValue() || []
             handleNext(value, items.concat(result))
           }
