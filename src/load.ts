@@ -1,5 +1,5 @@
 import { Observable, from, throwError, isObservable } from 'rxjs'
-import { catchError, map, tap } from 'rxjs/operators'
+import { catchError, map, tap, finalize } from 'rxjs/operators'
 import merge from 'lodash.merge'
 import { ctrl } from './__ctrl'
 import { handleNext } from './__util/handle-next'
@@ -8,44 +8,48 @@ import { optionsKey } from './__key'
 
 export class LoadOptions {
   loadOnSubscribe?: boolean
+  emit?: boolean
+  emitSuccess?: boolean
   constructor(value?: LoadOptions) {
     merge(this, value)
   }
 }
 
-const defaultOptions = new LoadOptions({ loadOnSubscribe: false })
+const defaults = new LoadOptions({
+  loadOnSubscribe: false,
+  emit: true,
+  emitSuccess: true
+})
 
-export function Load({ loadOnSubscribe = defaultOptions.loadOnSubscribe } = defaultOptions) {
+export function Load({ loadOnSubscribe = defaults.loadOnSubscribe, emit = defaults.emit, emitSuccess = !emit ? false : defaults.emitSuccess } = defaults) {
   return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
     const original = descriptor.value
     descriptor.value = function () {
       let
         { value, loading, loadingSuccess } = ctrl(this),
-        returned = original.apply(this, arguments),
-        count = 1
+        returned = original.apply(this, arguments)
+      if (!emit) loading = <any>{ next() { } }
+      if (!emitSuccess) loadingSuccess = <any>{ next() { } }
       const
         setValue = result => handleNext(value, result),
         dial = () => <T>(src: Observable<T>) => src.pipe(
           tap(result => {
             setValue(cloneDeep(result))
-            if (++count < 2) loading.next(false)
             loadingSuccess.next(true)
           }),
+          finalize(() => loading.next(false)),
           catchError(response => {
-            if (++count < 2) loading.next(false)
             loadingSuccess.next(false)
             return throwError(response)
           })
         )
       if (returned && typeof returned.then === `function`) {
-        --count
         loading.next(true)
         from(returned).pipe(dial()).subscribe()
       }
       else if (isObservable(returned)) {
         const subscribe = returned.subscribe.bind(returned)
         returned.subscribe = function () {
-          --count
           loading.next(true)
           return subscribe(...Array.from(arguments))
         }
@@ -55,7 +59,7 @@ export function Load({ loadOnSubscribe = defaultOptions.loadOnSubscribe } = defa
       else { }
       return returned
     }
-    descriptor.value[optionsKey] = new LoadOptions({ loadOnSubscribe })
+    descriptor.value[optionsKey] = new LoadOptions({ loadOnSubscribe, emit, emitSuccess })
     return descriptor
   }
 }

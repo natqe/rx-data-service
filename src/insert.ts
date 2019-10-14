@@ -1,5 +1,5 @@
 import { Observable, from, throwError, isObservable } from 'rxjs'
-import { catchError, tap, map, take } from 'rxjs/operators'
+import { catchError, tap, map, take, finalize } from 'rxjs/operators'
 import { ctrl } from './__ctrl'
 import get from 'lodash.get'
 import { optionsKey } from './__key'
@@ -11,14 +11,20 @@ import { LoadOptions } from './load'
 
 export class InsertOptions {
   refreshValue?: boolean
+  emit?: boolean
+  emitSuccess?: boolean
   constructor(value?: InsertOptions) {
     merge(this, value)
   }
 }
 
-const defaults = new InsertOptions({ refreshValue: null })
+const defaults = new InsertOptions({
+  refreshValue: null,
+  emit: true,
+  emitSuccess: true
+})
 
-export function Insert({ refreshValue = defaults.refreshValue } = defaults) {
+export function Insert({ refreshValue = defaults.refreshValue, emit = defaults.emit, emitSuccess = !emit ? false : defaults.emitSuccess } = defaults) {
   return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
     const original = descriptor.value
     descriptor.value = function () {
@@ -26,7 +32,6 @@ export function Insert({ refreshValue = defaults.refreshValue } = defaults) {
         instanceCtrl = ctrl(this),
         { inserting, insertingSuccess, value } = instanceCtrl,
         returned = original.apply(this, arguments),
-        count = 1,
         refresh = () => {
           const method = methods(this).find(key => get(this, [key, optionsKey]) instanceof LoadOptions)
           if (method !== null && method !== undefined) {
@@ -34,6 +39,8 @@ export function Insert({ refreshValue = defaults.refreshValue } = defaults) {
             if (isObservable(returned)) returned.pipe(take(1)).subscribe()
           }
         }
+      if (!emit) inserting = <any>{ next() { } }
+      if (!emitSuccess) insertingSuccess = <any>{ next() { } }
       const
         insertValue = result => {
           if (get(target.constructor[optionsKey], `type`, Array) === Array) {
@@ -45,25 +52,22 @@ export function Insert({ refreshValue = defaults.refreshValue } = defaults) {
         dial = () => <T>(src: Observable<T>) => src.pipe(
           tap(result => {
             if (!refreshValue) insertValue(cloneDeep(result))
-            if (++count < 2) inserting.next(false)
             insertingSuccess.next(true)
             if (refreshValue) refresh()
           }),
+          finalize(() => inserting.next(false)),
           catchError(response => {
-            if (++count < 2) inserting.next(false)
             insertingSuccess.next(false)
             return throwError(response)
           })
         )
       if (returned && typeof returned.then === `function`) {
-        --count
         inserting.next(true)
         from(returned).pipe(dial()).subscribe()
       }
       else if (isObservable(returned)) {
         const subscribe = returned.subscribe.bind(returned)
         returned.subscribe = function () {
-          --count
           inserting.next(true)
           return subscribe(...Array.from(arguments))
         }
@@ -78,7 +82,7 @@ export function Insert({ refreshValue = defaults.refreshValue } = defaults) {
       }
       return returned
     }
-    descriptor.value[optionsKey] = new InsertOptions({ refreshValue })
+    descriptor.value[optionsKey] = new InsertOptions({ refreshValue, emit, emitSuccess })
     return descriptor
   }
 }

@@ -1,5 +1,5 @@
 import { Observable, from, throwError, isObservable } from 'rxjs'
-import { catchError, map, take, tap } from 'rxjs/operators'
+import { catchError, map, take, tap, finalize } from 'rxjs/operators'
 import merge from 'lodash.merge'
 import { ctrl } from './__ctrl'
 import { handleNext } from './__util/handle-next'
@@ -8,18 +8,26 @@ import { optionsKey } from './__key'
 import get from 'lodash.get'
 import { methods } from './__util/methods'
 import { LoadOptions } from './load'
+import mergeWith from 'lodash.mergewith'
 
 export class UpsertOptions {
   id?: string | number
   refreshValue?: boolean
+  emit?: boolean
+  emitSuccess?: boolean
+  deepMergeArrays?: boolean | Array<string>
   constructor(value?: UpsertOptions) {
     merge(this, value)
   }
 }
 
-const defaults = new UpsertOptions({ refreshValue: null })
+const defaults = new UpsertOptions({
+  refreshValue: null,
+  emit: true,
+  emitSuccess: true
+})
 
-export function Upsert({ id, refreshValue = defaults.refreshValue } = defaults) {
+export function Upsert({ id, refreshValue = defaults.refreshValue, emit = defaults.emit, emitSuccess = !emit ? false : defaults.emitSuccess, deepMergeArrays = defaults.deepMergeArrays } = defaults) {
   return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
     const original = descriptor.value
     descriptor.value = function () {
@@ -27,7 +35,6 @@ export function Upsert({ id, refreshValue = defaults.refreshValue } = defaults) 
         instanceCtrl = ctrl(this),
         { value, upserting, upsertingSuccess } = instanceCtrl,
         returned = original.apply(this, arguments),
-        count = 1,
         refresh = () => {
           const method = methods(this).find(key => get(this, [key, optionsKey]) instanceof LoadOptions)
           if (method !== null && method !== undefined) {
@@ -35,6 +42,8 @@ export function Upsert({ id, refreshValue = defaults.refreshValue } = defaults) 
             if (isObservable(returned)) returned.pipe(take(1)).subscribe()
           }
         }
+      if (!emit) upserting = <any>{ next() { } }
+      if (!emitSuccess) upsertingSuccess = <any>{ next() { } }
       const
         upsertValue = result => {
           if (get(target.constructor[optionsKey], `type`, Array) === Array) {
@@ -42,8 +51,14 @@ export function Upsert({ id, refreshValue = defaults.refreshValue } = defaults) 
             const
               items = ctrl<Array<any>>(this).getValue() || [],
               upsertOne = (item) => {
-                const index = id ? items.findIndex(({ [id]: _id }) => _id === item[id]) : -1
-                index !== -1 ? merge(items[index], item) : items.push(item)
+                const
+                  index = id ? items.findIndex(({ [id]: _id }) => _id === item[id]) : -1,
+                  pathesToMerge = index !== -1 && Array.isArray(deepMergeArrays) ? deepMergeArrays.map(path => get(items[index], path)) : []
+                index !== -1 ?
+                  mergeWith(items[index], item, (a, b) => {
+                    if (deepMergeArrays !== true && Array.isArray(a) && !pathesToMerge.some(item => item === a)) return b
+                  }) :
+                  items.push(item)
               }
             if (Array.isArray(result)) for (const item of result) upsertOne(item)
             else upsertOne(result)
@@ -54,25 +69,22 @@ export function Upsert({ id, refreshValue = defaults.refreshValue } = defaults) 
         dial = () => <T>(src: Observable<T>) => src.pipe(
           tap(result => {
             if (!refreshValue) upsertValue(cloneDeep(result))
-            if (++count < 2) upserting.next(false)
             upsertingSuccess.next(true)
             if (refreshValue) refresh()
           }),
+          finalize(() => upserting.next(false)),
           catchError(response => {
-            if (++count < 2) upserting.next(false)
             upsertingSuccess.next(false)
             return throwError(response)
           })
         )
       if (returned && typeof returned.then === `function`) {
-        --count
         upserting.next(true)
         from(returned).pipe(dial()).subscribe()
       }
       else if (isObservable(returned)) {
         const subscribe = returned.subscribe.bind(returned)
         returned.subscribe = function () {
-          --count
           upserting.next(true)
           return subscribe(...Array.from(arguments))
         }
@@ -87,7 +99,7 @@ export function Upsert({ id, refreshValue = defaults.refreshValue } = defaults) 
       }
       return returned
     }
-    descriptor.value[optionsKey] = new UpsertOptions({ id, refreshValue })
+    descriptor.value[optionsKey] = new UpsertOptions({ id, refreshValue, emit, emitSuccess, deepMergeArrays })
     return descriptor
   }
 }

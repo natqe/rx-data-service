@@ -1,5 +1,5 @@
 import { Observable, from, throwError, isObservable } from 'rxjs'
-import { catchError, tap, take } from 'rxjs/operators'
+import { catchError, tap, take, finalize } from 'rxjs/operators'
 import { ctrl } from './__ctrl'
 import merge from 'lodash.merge'
 import { methods } from './__util/methods'
@@ -9,14 +9,20 @@ import { LoadOptions } from './load'
 
 export class OperateOptions {
   refreshValue?: boolean
+  emit?: boolean
+  emitSuccess?: boolean
   constructor(value?: OperateOptions) {
     merge(this, value)
   }
 }
 
-const defaults = new OperateOptions({ refreshValue: null })
+const defaults = new OperateOptions({
+  refreshValue: null,
+  emit: true,
+  emitSuccess: true
+})
 
-export function Operate({ refreshValue = defaults.refreshValue } = defaults) {
+export function Operate({ refreshValue = defaults.refreshValue, emit = defaults.emit, emitSuccess = !emit ? false : defaults.emitSuccess } = defaults) {
   return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
     const original = descriptor.value
     descriptor.value = function () {
@@ -24,7 +30,6 @@ export function Operate({ refreshValue = defaults.refreshValue } = defaults) {
         instanceCtrl = ctrl(this),
         { operating, operatingSuccess } = instanceCtrl,
         returned = original.apply(this, arguments),
-        count = 1,
         refresh = () => {
           const method = methods(this).find(key => get(this, [key, optionsKey]) instanceof LoadOptions)
           if (method !== null && method !== undefined) {
@@ -32,27 +37,26 @@ export function Operate({ refreshValue = defaults.refreshValue } = defaults) {
             if (isObservable(returned)) returned.pipe(take(1)).subscribe()
           }
         }
+      if (!emit) operating = <any>{ next() { } }
+      if (!emitSuccess) operatingSuccess = <any>{ next() { } }
       const dial = () => <T>(src: Observable<T>) => src.pipe(
         tap(() => {
-          if (++count < 2) operating.next(false)
           operatingSuccess.next(true)
           if (refreshValue) refresh()
         }),
+        finalize(() => operating.next(false)),
         catchError(response => {
-          if (++count < 2) operating.next(false)
           operatingSuccess.next(false)
           return throwError(response)
         })
       )
       if (returned && typeof returned.then === `function`) {
-        --count
         operating.next(true)
         from(returned).pipe(dial()).subscribe()
       }
       else if (isObservable(returned)) {
         const subscribe = returned.subscribe.bind(returned)
         returned.subscribe = function () {
-          --count
           operating.next(true)
           return subscribe(...Array.from(arguments))
         }
@@ -63,7 +67,7 @@ export function Operate({ refreshValue = defaults.refreshValue } = defaults) {
       }
       return returned
     }
-    descriptor.value[optionsKey] = new OperateOptions({ refreshValue })
+    descriptor.value[optionsKey] = new OperateOptions({ refreshValue, emit, emitSuccess })
     return descriptor
   }
 }

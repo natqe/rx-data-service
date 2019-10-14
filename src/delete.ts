@@ -1,5 +1,5 @@
 import { Observable, from, throwError, isObservable } from 'rxjs'
-import { catchError, map, take, tap } from 'rxjs/operators'
+import { catchError, take, tap, finalize } from 'rxjs/operators'
 import merge from 'lodash.merge'
 import { ctrl } from './__ctrl'
 import { handleNext } from './__util/handle-next'
@@ -14,6 +14,8 @@ export class DeleteOptions {
   loadNext?: boolean
   deleteAll?: boolean
   refreshValue?: boolean
+  emit?: boolean
+  emitSuccess?: boolean
   constructor(value?: DeleteOptions) {
     merge(this, value)
   }
@@ -22,10 +24,12 @@ export class DeleteOptions {
 const defaults = new DeleteOptions({
   loadNext: null,
   deleteAll: null,
-  refreshValue: null
+  refreshValue: null,
+  emit: true,
+  emitSuccess: true
 })
 
-export function Delete({ loadNext = defaults.loadNext, deleteAll = defaults.deleteAll, refreshValue = defaults.refreshValue } = defaults) {
+export function Delete({ loadNext = defaults.loadNext, deleteAll = defaults.deleteAll, refreshValue = defaults.refreshValue, emit = defaults.emit, emitSuccess = !emit ? false : defaults.emitSuccess } = defaults) {
   return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
     const original = descriptor.value
     descriptor.value = function () {
@@ -33,7 +37,6 @@ export function Delete({ loadNext = defaults.loadNext, deleteAll = defaults.dele
         instanceCtrl = ctrl(this),
         { value, deleting, deletingSuccess } = instanceCtrl,
         returned = original.apply(this, arguments),
-        count = 1,
         refresh = () => {
           const method = methods(this).find(key => get(this, [key, optionsKey]) instanceof LoadOptions)
           if (method !== null && method !== undefined) {
@@ -41,6 +44,8 @@ export function Delete({ loadNext = defaults.loadNext, deleteAll = defaults.dele
             if (isObservable(returned)) returned.pipe(take(1)).subscribe()
           }
         }
+      if (!emit) deleting = <any>{ next() { } }
+      if (!emitSuccess) deletingSuccess = <any>{ next() { } }
       const
         deleteValue = result => {
           if (get(target.constructor[optionsKey], `type`, Array) === Array && result && !deleteAll) {
@@ -57,25 +62,22 @@ export function Delete({ loadNext = defaults.loadNext, deleteAll = defaults.dele
         dial = () => <T>(src: Observable<T>) => src.pipe(
           tap(result => {
             if (!refreshValue) deleteValue(cloneDeep(result))
-            if (++count < 2) deleting.next(false)
             deletingSuccess.next(true)
             if (refreshValue) refresh()
           }),
+          finalize(() => deleting.next(false)),
           catchError(response => {
-            if (++count < 2) deleting.next(false)
             deletingSuccess.next(false)
             return throwError(response)
           })
         )
       if (returned && typeof returned.then === `function`) {
-        --count
         deleting.next(true)
         from(returned).pipe(dial()).subscribe()
       }
       else if (isObservable(returned)) {
         const subscribe = returned.subscribe.bind(returned)
         returned.subscribe = function () {
-          --count
           deleting.next(true)
           return subscribe(...Array.from(arguments))
         }
@@ -90,7 +92,7 @@ export function Delete({ loadNext = defaults.loadNext, deleteAll = defaults.dele
       }
       return returned
     }
-    descriptor.value[optionsKey] = new DeleteOptions({ loadNext, deleteAll })
+    descriptor.value[optionsKey] = new DeleteOptions({ loadNext, deleteAll, refreshValue, emit, emitSuccess })
     return descriptor
   }
 }
