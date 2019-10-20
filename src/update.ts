@@ -15,7 +15,7 @@ export class UpdateOptions {
   refreshValue?: boolean
   emit?: boolean
   emitSuccess?: boolean
-  deepMergeArrays?: boolean | string
+  deepMergeArrays?: boolean | Array<string>
   constructor(value?: UpdateOptions) {
     merge(this, value)
   }
