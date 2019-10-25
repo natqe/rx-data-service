@@ -64,13 +64,13 @@ class Ctrl<T> {
     for (const observable of [deleting, updating, upserting, inserting, loading]) observable.
       pipe(
         skip(1),
-        tap(value => operating.next(value))
+        tap<boolean>(value => operating.next(value))
       ).
       subscribe()
     for (const observable of [deletingSuccess, updatingSuccess, insertingSuccess, loadingSuccess, upsertingSuccess]) observable.
       pipe(
         skip(1),
-        tap(value => operatingSuccess.next(value))
+        tap<boolean>(value => operatingSuccess.next(value))
       ).
       subscribe()
   }
