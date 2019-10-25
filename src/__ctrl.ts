@@ -1,7 +1,6 @@
 import cloneDeep from 'lodash.clonedeep'
 import { BehaviorSubject, Observable } from 'rxjs'
-import { tap } from 'rxjs/operators'
-import { waitUntilFalse } from './__util/wait-until-false'
+import { tap, skip } from 'rxjs/operators'
 import { AbstractDataService } from './service'
 import isEqual from 'lodash.isequal'
 import { deepFreeze } from './__util/deep-freeze'
@@ -30,6 +29,10 @@ class Ctrl<T> {
     deletingSuccess: boolean
   }
 
+  constructor() {
+    this.dialOperating()
+  }
+
   readonly value = new BehaviorSubject<T>(null)
 
   readonly operating = new BehaviorSubject<boolean>(null)
@@ -56,15 +59,20 @@ class Ctrl<T> {
 
   readonly deletingSuccess = new BehaviorSubject<boolean>(null)
 
-  dialOperating<T extends boolean>() {
-    return tap<T>(value => this.operating.next(value))
-  }
-
-  waitAndDialOperatingSuccess<T extends boolean>(srcToWhitFor: Observable<boolean>) {
-    return (src: Observable<T>) => src.pipe(
-      waitUntilFalse(srcToWhitFor),
-      tap<T>(value => this.operatingSuccess.next(value))
-    )
+  private dialOperating() {
+    const { operating, operatingSuccess, deleting, deletingSuccess, updating, updatingSuccess, upserting, inserting, insertingSuccess, loading, loadingSuccess, upsertingSuccess } = this
+    for (const observable of [deleting, updating, upserting, inserting, loading]) observable.
+      pipe(
+        skip(1),
+        tap(value => operating.next(value))
+      ).
+      subscribe()
+    for (const observable of [deletingSuccess, updatingSuccess, insertingSuccess, loadingSuccess, upsertingSuccess]) observable.
+      pipe(
+        skip(1),
+        tap(value => operatingSuccess.next(value))
+      ).
+      subscribe()
   }
 
   getValue() {
