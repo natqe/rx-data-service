@@ -20,7 +20,7 @@
     "lodash.reject": "4.6.0",
     "lodash.remove": "4.7.0",
     "lodash.some": "4.6.0",
-    "rxjs": "^6.4.0"
+    "rxjs": "6.4.0"
   },
   "devDependencies": {
     "@types/lodash.clonedeep": "4.5.6",
