@@ -10,17 +10,17 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@types/lodash.mergewith": "^4.6.6",
+    "@types/lodash.mergewith": "4.6.6",
     "lodash.clonedeep": "4.5.0",
     "lodash.get": "4.4.2",
     "lodash.isequal": "4.5.0",
     "lodash.merge": "4.6.2",
-    "lodash.mergewith": "^4.6.2",
+    "lodash.mergewith": "4.6.2",
     "lodash.random": "3.2.0",
     "lodash.reject": "4.6.0",
     "lodash.remove": "4.7.0",
     "lodash.some": "4.6.0",
-    "rxjs": "6.4.0"
+    "rxjs": "6.5.3"
   },
   "devDependencies": {
     "@types/lodash.clonedeep": "4.5.6",
