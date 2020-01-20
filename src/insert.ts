@@ -43,11 +43,14 @@ export function Insert({ refreshValue = defaults.refreshValue, emit = defaults.e
       if (!emitSuccess) insertingSuccess = <any>{ next() { } }
       const
         insertValue = result => {
-          if (get(target.constructor[optionsKey], `type`, Array) === Array) {
-            const items = ctrl<Array<any>>(this).getValue() || []
-            handleNext(value, items.concat(result))
+          if (result) {
+            if (Array.isArray(result)) result = result.filter(Boolean)
+            if (get(target.constructor[optionsKey], `type`, Array) === Array) {
+              const items = ctrl<Array<any>>(this).getValue() || []
+              handleNext(value, items.concat(result))
+            }
+            else handleNext(value, result)
           }
-          else handleNext(value, result)
         },
         dial = () => <T>(src: Observable<T>) => src.pipe(
           tap(result => {

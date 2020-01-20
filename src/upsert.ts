@@ -51,14 +51,16 @@ export function Upsert({ id, refreshValue = defaults.refreshValue, emit = defaul
             const
               items = ctrl<Array<any>>(this).getValue() || [],
               upsertOne = (item) => {
-                const
-                  index = id ? items.findIndex(({ [id]: _id }) => _id === item[id]) : -1,
-                  pathesToMerge = index !== -1 && Array.isArray(deepMergeArrays) ? deepMergeArrays.map(path => get(items[index], path)) : []
-                index !== -1 ?
-                  mergeWith(items[index], item, (a, b) => {
-                    if (deepMergeArrays !== true && Array.isArray(a) && !pathesToMerge.some(item => item === a)) return b
-                  }) :
-                  items.push(item)
+                if (item) {
+                  const
+                    index = id ? items.findIndex(({ [id]: _id }) => _id === item[id]) : -1,
+                    pathesToMerge = index !== -1 && Array.isArray(deepMergeArrays) ? deepMergeArrays.map(path => get(items[index], path)) : []
+                  index !== -1 ?
+                    mergeWith(items[index], item, (a, b) => {
+                      if (deepMergeArrays !== true && Array.isArray(a) && !pathesToMerge.some(item => item === a)) return b
+                    }) :
+                    items.push(item)
+                }
               }
             if (Array.isArray(result)) for (const item of result) upsertOne(item)
             else upsertOne(result)
