@@ -15,6 +15,7 @@ export class UpdateOptions {
   refreshValue?: boolean
   emit?: boolean
   emitSuccess?: boolean
+  emitAs?: 'delete' | 'insert' | 'upsert' | 'load'
   deepMergeArrays?: boolean | Array<string>
   constructor(value?: UpdateOptions) {
     merge(this, value)
@@ -24,16 +25,17 @@ export class UpdateOptions {
 const defaults = new UpdateOptions({
   refreshValue: null,
   emit: true,
-  emitSuccess: true
+  emitSuccess: true,
+  emitAs: null
 })
 
-export function Update({ id, refreshValue = defaults.refreshValue, emit = defaults.emit, emitSuccess = !emit ? false : defaults.emitSuccess, deepMergeArrays = defaults.deepMergeArrays } = defaults) {
+export function Update({ id, emitAs = defaults.emitAs, refreshValue = defaults.refreshValue, emit = defaults.emit, emitSuccess = !emit ? false : defaults.emitSuccess, deepMergeArrays = defaults.deepMergeArrays } = defaults) {
   return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
     const original = descriptor.value
     descriptor.value = function () {
       let
         instanceCtrl = ctrl(this),
-        { updating, updatingSuccess, value } = instanceCtrl,
+        { updating, updatingSuccess, deleting, deletingSuccess, inserting, insertingSuccess, loading, loadingSuccess, upserting, upsertingSuccess, value } = instanceCtrl,
         returned = original.apply(this, arguments),
         refresh = () => {
           const method = methods(this).find(key => get(this, [key, optionsKey]) instanceof LoadOptions)
@@ -42,6 +44,28 @@ export function Update({ id, refreshValue = defaults.refreshValue, emit = defaul
             if (isObservable(returned)) returned.pipe(take(1)).subscribe()
           }
         }
+      if (emitAs) switch (emitAs) {
+        case 'delete': {
+          updating = deleting
+          updatingSuccess = deletingSuccess
+          break
+        }
+        case 'insert': {
+          updating = inserting
+          updatingSuccess = insertingSuccess
+          break
+        }
+        case 'load': {
+          updating = loading
+          updatingSuccess = loadingSuccess
+          break
+        }
+        case 'upsert': {
+          updating = upserting
+          updatingSuccess = upsertingSuccess
+          break
+        }
+      }
       if (!emit) updating = <any>{ next() { } }
       if (!emitSuccess) updatingSuccess = <any>{ next() { } }
       const
@@ -52,7 +76,7 @@ export function Update({ id, refreshValue = defaults.refreshValue, emit = defaul
               items = ctrl<Array<any>>(this).getValue() || [],
               updateOne = (item) => {
                 const index = id ? items.findIndex(({ [id]: _id }) => _id === item[id]) : -1,
-                pathesToMerge = index !== -1 && Array.isArray(deepMergeArrays) ? deepMergeArrays.map(path => get(items[index], path)) : []
+                  pathesToMerge = index !== -1 && Array.isArray(deepMergeArrays) ? deepMergeArrays.map(path => get(items[index], path)) : []
                 if (index !== -1) mergeWith(items[index], item, (a, b) => {
                   if (deepMergeArrays !== true && Array.isArray(a) && !pathesToMerge.some(item => item === a)) return b
                 })

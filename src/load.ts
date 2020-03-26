@@ -10,6 +10,7 @@ export class LoadOptions {
   loadOnSubscribe?: boolean
   emit?: boolean
   emitSuccess?: boolean
+  emitAs?: 'delete' | 'insert' | 'upsert' | 'update'
   constructor(value?: LoadOptions) {
     merge(this, value)
   }
@@ -18,17 +19,42 @@ export class LoadOptions {
 const defaults = new LoadOptions({
   loadOnSubscribe: false,
   emit: true,
-  emitSuccess: true
+  emitSuccess: true,
+  emitAs: null
 })
 
-export function Load({ loadOnSubscribe = defaults.loadOnSubscribe, emit = defaults.emit, emitSuccess = !emit ? false : defaults.emitSuccess } = defaults) {
+export function Load({ emitAs = defaults.emitAs, loadOnSubscribe = defaults.loadOnSubscribe, emit = defaults.emit, emitSuccess = !emit ? false : defaults.emitSuccess } = defaults) {
   return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
     const original = descriptor.value
     descriptor.value = function () {
       let
-        { value, loading, loadingSuccess } = ctrl(this),
+        { value, loading, loadingSuccess, deleting, deletingSuccess, inserting, insertingSuccess, updating, updatingSuccess, upserting, upsertingSuccess } = ctrl(this),
         returned = original.apply(this, arguments)
-      if (!emit) loading = <any>{ next() { } }
+      if (emitAs) switch (emitAs) {
+        case 'delete': {
+          loading = deleting
+          loadingSuccess = deletingSuccess
+          break
+        }
+        case 'insert': {
+          loading = inserting
+          loadingSuccess = insertingSuccess
+          break
+        }
+        case 'update': {
+          loading = updating
+          loadingSuccess = updatingSuccess
+          break
+        }
+        case 'upsert': {
+          loading = upserting
+          loadingSuccess = upsertingSuccess
+          break
+        }
+      }
+      if (!emit) {
+        loading = <any>{ next() { } }
+      }
       if (!emitSuccess) loadingSuccess = <any>{ next() { } }
       const
         setValue = result => handleNext(value, result),

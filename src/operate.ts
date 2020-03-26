@@ -11,6 +11,7 @@ export class OperateOptions {
   refreshValue?: boolean
   emit?: boolean
   emitSuccess?: boolean
+  emitAs?: 'delete' | 'insert' | 'update' | 'load' | 'upsert'
   constructor(value?: OperateOptions) {
     merge(this, value)
   }
@@ -19,16 +20,17 @@ export class OperateOptions {
 const defaults = new OperateOptions({
   refreshValue: null,
   emit: true,
-  emitSuccess: true
+  emitSuccess: true,
+  emitAs: null
 })
 
-export function Operate({ refreshValue = defaults.refreshValue, emit = defaults.emit, emitSuccess = !emit ? false : defaults.emitSuccess } = defaults) {
+export function Operate({ emitAs = defaults.emitAs, refreshValue = defaults.refreshValue, emit = defaults.emit, emitSuccess = !emit ? false : defaults.emitSuccess } = defaults) {
   return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
     const original = descriptor.value
     descriptor.value = function () {
       let
         instanceCtrl = ctrl(this),
-        { operating, operatingSuccess } = instanceCtrl,
+        { operating, operatingSuccess, deleting, deletingSuccess, inserting, insertingSuccess, loading, loadingSuccess, upserting, upsertingSuccess, updating, updatingSuccess } = instanceCtrl,
         returned = original.apply(this, arguments),
         refresh = () => {
           const method = methods(this).find(key => get(this, [key, optionsKey]) instanceof LoadOptions)
@@ -37,6 +39,33 @@ export function Operate({ refreshValue = defaults.refreshValue, emit = defaults.
             if (isObservable(returned)) returned.pipe(take(1)).subscribe()
           }
         }
+      if (emitAs) switch (emitAs) {
+        case 'delete': {
+          operating = deleting
+          operatingSuccess = deletingSuccess
+          break
+        }
+        case 'insert': {
+          operating = inserting
+          operatingSuccess = insertingSuccess
+          break
+        }
+        case 'load': {
+          operating = loading
+          operatingSuccess = loadingSuccess
+          break
+        }
+        case 'upsert': {
+          operating = upserting
+          operatingSuccess = upsertingSuccess
+          break
+        }
+        case 'update': {
+          operating = updating
+          operatingSuccess = updatingSuccess
+          break
+        }
+      }
       if (!emit) operating = <any>{ next() { } }
       if (!emitSuccess) operatingSuccess = <any>{ next() { } }
       const dial = () => <T>(src: Observable<T>) => src.pipe(

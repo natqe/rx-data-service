@@ -13,6 +13,7 @@ export class InsertOptions {
   refreshValue?: boolean
   emit?: boolean
   emitSuccess?: boolean
+  emitAs?: 'delete' | 'upsert' | 'update' | 'load'
   constructor(value?: InsertOptions) {
     merge(this, value)
   }
@@ -21,16 +22,17 @@ export class InsertOptions {
 const defaults = new InsertOptions({
   refreshValue: null,
   emit: true,
-  emitSuccess: true
+  emitSuccess: true,
+  emitAs: null
 })
 
-export function Insert({ refreshValue = defaults.refreshValue, emit = defaults.emit, emitSuccess = !emit ? false : defaults.emitSuccess } = defaults) {
+export function Insert({ emitAs = defaults.emitAs, refreshValue = defaults.refreshValue, emit = defaults.emit, emitSuccess = !emit ? false : defaults.emitSuccess } = defaults) {
   return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
     const original = descriptor.value
     descriptor.value = function () {
       let
         instanceCtrl = ctrl(this),
-        { inserting, insertingSuccess, value } = instanceCtrl,
+        { value, inserting, insertingSuccess, upserting, upsertingSuccess, deleting, deletingSuccess, loading, loadingSuccess, updating, updatingSuccess } = instanceCtrl,
         returned = original.apply(this, arguments),
         refresh = () => {
           const method = methods(this).find(key => get(this, [key, optionsKey]) instanceof LoadOptions)
@@ -39,6 +41,28 @@ export function Insert({ refreshValue = defaults.refreshValue, emit = defaults.e
             if (isObservable(returned)) returned.pipe(take(1)).subscribe()
           }
         }
+      if (emitAs) switch (emitAs) {
+        case 'upsert': {
+          inserting = upserting
+          insertingSuccess = upsertingSuccess
+          break
+        }
+        case 'delete': {
+          inserting = deleting
+          insertingSuccess = deletingSuccess
+          break
+        }
+        case 'load': {
+          inserting = loading
+          insertingSuccess = loadingSuccess
+          break
+        }
+        case 'update': {
+          inserting = updating
+          insertingSuccess = updatingSuccess
+          break
+        }
+      }
       if (!emit) inserting = <any>{ next() { } }
       if (!emitSuccess) insertingSuccess = <any>{ next() { } }
       const

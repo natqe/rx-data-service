@@ -15,6 +15,7 @@ export class UpsertOptions {
   refreshValue?: boolean
   emit?: boolean
   emitSuccess?: boolean
+  emitAs?: 'delete' | 'insert' | 'update' | 'load'
   deepMergeArrays?: boolean | Array<string>
   constructor(value?: UpsertOptions) {
     merge(this, value)
@@ -24,16 +25,17 @@ export class UpsertOptions {
 const defaults = new UpsertOptions({
   refreshValue: null,
   emit: true,
-  emitSuccess: true
+  emitSuccess: true,
+  emitAs: null
 })
 
-export function Upsert({ id, refreshValue = defaults.refreshValue, emit = defaults.emit, emitSuccess = !emit ? false : defaults.emitSuccess, deepMergeArrays = defaults.deepMergeArrays } = defaults) {
+export function Upsert({ id,  emitAs = defaults.emitAs, refreshValue = defaults.refreshValue, emit = defaults.emit, emitSuccess = !emit ? false : defaults.emitSuccess, deepMergeArrays = defaults.deepMergeArrays } = defaults) {
   return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
     const original = descriptor.value
     descriptor.value = function () {
       let
         instanceCtrl = ctrl(this),
-        { value, upserting, upsertingSuccess } = instanceCtrl,
+        { value, upserting, upsertingSuccess, deleting, deletingSuccess, inserting, insertingSuccess, updating, updatingSuccess, loading, loadingSuccess} = instanceCtrl,
         returned = original.apply(this, arguments),
         refresh = () => {
           const method = methods(this).find(key => get(this, [key, optionsKey]) instanceof LoadOptions)
@@ -42,6 +44,28 @@ export function Upsert({ id, refreshValue = defaults.refreshValue, emit = defaul
             if (isObservable(returned)) returned.pipe(take(1)).subscribe()
           }
         }
+      if (emitAs) switch (emitAs) {
+        case 'delete': {
+          upserting = deleting
+          upsertingSuccess = deletingSuccess
+          break
+        }
+        case 'insert': {
+          upserting = inserting
+          upsertingSuccess = insertingSuccess
+          break
+        }
+        case 'load': {
+          upserting = loading
+          upsertingSuccess = loadingSuccess
+          break
+        }
+        case 'update': {
+          upserting = updating
+          upsertingSuccess = updatingSuccess
+          break
+        }
+      }
       if (!emit) upserting = <any>{ next() { } }
       if (!emitSuccess) upsertingSuccess = <any>{ next() { } }
       const

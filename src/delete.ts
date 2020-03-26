@@ -16,6 +16,7 @@ export class DeleteOptions {
   refreshValue?: boolean
   emit?: boolean
   emitSuccess?: boolean
+  emitAs?: 'insert' | 'upsert' | 'update' | 'load'
   constructor(value?: DeleteOptions) {
     merge(this, value)
   }
@@ -26,16 +27,17 @@ const defaults = new DeleteOptions({
   deleteAll: null,
   refreshValue: null,
   emit: true,
-  emitSuccess: true
+  emitSuccess: true,
+  emitAs: null
 })
 
-export function Delete({ loadNext = defaults.loadNext, deleteAll = defaults.deleteAll, refreshValue = defaults.refreshValue, emit = defaults.emit, emitSuccess = !emit ? false : defaults.emitSuccess } = defaults) {
+export function Delete({ emitAs = defaults.emitAs, loadNext = defaults.loadNext, deleteAll = defaults.deleteAll, refreshValue = defaults.refreshValue, emit = defaults.emit, emitSuccess = !emit ? false : defaults.emitSuccess } = defaults) {
   return function (target: any, propertyKey: string | symbol, descriptor: PropertyDescriptor) {
     const original = descriptor.value
     descriptor.value = function () {
       let
         instanceCtrl = ctrl(this),
-        { value, deleting, deletingSuccess } = instanceCtrl,
+        { value, deleting, deletingSuccess, upserting, upsertingSuccess, inserting, insertingSuccess, loading, loadingSuccess, updating, updatingSuccess } = instanceCtrl,
         returned = original.apply(this, arguments),
         refresh = () => {
           const method = methods(this).find(key => get(this, [key, optionsKey]) instanceof LoadOptions)
@@ -44,6 +46,28 @@ export function Delete({ loadNext = defaults.loadNext, deleteAll = defaults.dele
             if (isObservable(returned)) returned.pipe(take(1)).subscribe()
           }
         }
+      if (emitAs) switch (emitAs) {
+        case 'upsert': {
+          deleting = upserting
+          deletingSuccess = upsertingSuccess
+          break
+        }
+        case 'insert': {
+          deleting = inserting
+          deletingSuccess = insertingSuccess
+          break
+        }
+        case 'load': {
+          deleting = loading
+          deletingSuccess = loadingSuccess
+          break
+        }
+        case 'update': {
+          deleting = updating
+          deletingSuccess = updatingSuccess
+          break
+        }
+      }
       if (!emit) deleting = <any>{ next() { } }
       if (!emitSuccess) deletingSuccess = <any>{ next() { } }
       const
