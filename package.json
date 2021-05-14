@@ -1,10 +1,10 @@
 {
   "name": "rx-data-service",
-  "version": "3.0.12",
+  "version": "3.0.13",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "rm -rf dist && npx typescript && cp readme.md dist/readme.md && cp LICENSE dist/LICENSE  && cp -R src dist/src && npm version patch && cp package.json dist/package.json && cd dist/ && npm publish"
+    "build": "rm -rf dist && npx tsc && cp readme.md dist/readme.md && cp LICENSE dist/LICENSE  && cp -R src dist/src && npm version patch && cp package.json dist/package.json && cd dist/ && npm publish"
   },
   "keywords": [],
   "author": "",
@@ -19,18 +19,18 @@
     "lodash.reject": "4.6.0",
     "lodash.remove": "4.7.0",
     "lodash.some": "4.6.0",
-    "rxjs": "6.6.2"
+    "rxjs": "7.0.1"
   },
   "devDependencies": {
-    "@types/lodash.mergewith": "4.6.6",
     "@types/lodash.clonedeep": "4.5.6",
     "@types/lodash.get": "4.4.6",
     "@types/lodash.isequal": "4.5.5",
     "@types/lodash.merge": "4.6.6",
+    "@types/lodash.mergewith": "4.6.6",
     "@types/lodash.random": "3.2.6",
     "@types/lodash.reject": "4.6.6",
     "@types/lodash.remove": "4.7.6",
     "@types/lodash.some": "4.6.6",
-    "typescript": "3.9.7"
+    "typescript": "4.2.4"
   }
 }
