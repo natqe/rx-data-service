@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "rm -rf dist && npx tsc --module ES2015 && cp readme.md dist/readme.md && cp LICENSE dist/LICENSE  && cp -R src dist/src && npm version patch && cp package.json dist/package.json && cd dist/ && npm publish"
+    "build": "rm -rf dist && npx tsc && cp readme.md dist/readme.md && cp LICENSE dist/LICENSE  && cp -R src dist/src && npm version patch && cp package.json dist/package.json && cd dist/ && npm publish"
   },
   "keywords": [],
   "author": "",
