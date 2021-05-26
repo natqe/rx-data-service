@@ -66,7 +66,11 @@ export function Load({ emitAs = defaults.emitAs, loadOnSubscribe = defaults.load
           finalize(() => loading.next(false)),
           catchError(response => {
             loadingSuccess.next(false)
-            return throwError(response)
+            return throwError(()=> {
+              const err = new Error(response.message)
+              err.stack = response.stack
+              return err
+            })
           })
         )
       if (returned && typeof returned.then === `function`) {

@@ -96,7 +96,11 @@ export function Update({ id, emitAs = defaults.emitAs, refreshValue = defaults.r
           finalize(() => updating.next(false)),
           catchError(response => {
             updatingSuccess.next(false)
-            return throwError(response)
+            return throwError(()=> {
+              const err = new Error(response.message)
+              err.stack = response.stack
+              return err
+            })
           })
         )
       if (returned && typeof returned.then === `function`) {

@@ -92,7 +92,11 @@ export function Delete({ emitAs = defaults.emitAs, loadNext = defaults.loadNext,
           finalize(() => deleting.next(false)),
           catchError(response => {
             deletingSuccess.next(false)
-            return throwError(response)
+            return throwError(()=> {
+              const err = new Error(response.message)
+              err.stack = response.stack
+              return err
+            })
           })
         )
       if (returned && typeof returned.then === `function`) {

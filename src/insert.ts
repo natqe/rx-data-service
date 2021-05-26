@@ -85,7 +85,11 @@ export function Insert({ emitAs = defaults.emitAs, refreshValue = defaults.refre
           finalize(() => inserting.next(false)),
           catchError(response => {
             insertingSuccess.next(false)
-            return throwError(response)
+            return throwError(()=> {
+              const err = new Error(response.message)
+              err.stack = response.stack
+              return err
+            })
           })
         )
       if (returned && typeof returned.then === `function`) {

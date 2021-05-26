@@ -101,7 +101,11 @@ export function Upsert({ id,  emitAs = defaults.emitAs, refreshValue = defaults.
           finalize(() => upserting.next(false)),
           catchError(response => {
             upsertingSuccess.next(false)
-            return throwError(response)
+            return throwError(()=> {
+              const err = new Error(response.message)
+              err.stack = response.stack
+              return err
+            })
           })
         )
       if (returned && typeof returned.then === `function`) {
